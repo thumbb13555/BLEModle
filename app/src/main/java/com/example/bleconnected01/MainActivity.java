@@ -19,8 +19,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        Log.v("BT","這是首頁");
         btn = (Button) findViewById(R.id.nt01);
 
         btn.setOnClickListener(new View.OnClickListener() {

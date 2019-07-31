@@ -30,7 +30,9 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 
@@ -52,6 +54,9 @@ public class BluetoothLeService extends Service {
     BluetoothGattCharacteristic characteristic;
     boolean enabled;
     public String Jetec = "Jetec";
+    public String PASSWD = "PASSWD";
+    public static final String SEND_VALUE = "SEND_VALUE";
+    private static int i = 0;
 
     private static final int STATE_DISCONNECTED = 0;//設備無法連接
     private static final int STATE_CONNECTING = 1;//設備正在連接
@@ -171,27 +176,6 @@ public class BluetoothLeService extends Service {
                                  final BluetoothGattCharacteristic characteristic) {
         final Intent intent = new Intent(action);
 
-        // This is special handling for the Heart Rate Measurement profile.  Data parsing is
-        // carried out as per profile specifications:
-        // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
-        //以下是心率测量配置文件。====================================================
-        if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
-            Log.v("BT", "broadcastUpdate->UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())");
-            int flag = characteristic.getProperties();
-            int format = -1;
-            if ((flag & 0x01) != 0) {
-                format = BluetoothGattCharacteristic.FORMAT_UINT16;
-                Log.d(TAG, "Heart rate format UINT16.");
-            } else {
-                format = BluetoothGattCharacteristic.FORMAT_UINT8;
-                Log.d(TAG, "Heart rate format UINT8.");
-            }
-            final int heartRate = characteristic.getIntValue(format, 1);
-            Log.d(TAG, String.format("Received heart rate: %d", heartRate));
-            intent.putExtra(EXTRA_DATA, String.valueOf(heartRate));
-            //以上是心率测量配置文件。====================================================
-        } else {
-            // For all other profiles, writes the data formatted in HEX.
             /**對於所有其他配置文件，以十六進制寫數據*/
             final byte[] data = characteristic.getValue();
             if (data != null && data.length > 0) {
@@ -200,7 +184,6 @@ public class BluetoothLeService extends Service {
                     stringBuilder.append(String.format("%02X ", byteChar));
                 intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
             }
-        }
 
         sendBroadcast(intent);
     }
@@ -335,13 +318,15 @@ public class BluetoothLeService extends Service {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
         }
-
         mBluetoothGatt.readCharacteristic(characteristic);
         String record = characteristic.getStringValue(0);
-
-
-
         Log.v("BT", "readCharacteristic回傳: " + record);
+        SystemClock.sleep(2000);
+        Intent intent = new Intent();
+        
+
+
+
     }
 
     /**
@@ -359,6 +344,7 @@ public class BluetoothLeService extends Service {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
         }
+        Log.v("BT","第一個目標是進入setCharacteristicNotification");
         UUID ServiceUUID = UUID.fromString(Service_uuid);
         UUID TXUUID = UUID.fromString(Characteristic_uuid_TX);
         if (!mBluetoothGatt.equals(null)) {
@@ -384,13 +370,9 @@ public class BluetoothLeService extends Service {
                     }
                     mBluetoothGatt.writeDescriptor(descriptor);
                     mBluetoothGatt.setCharacteristicNotification(characteristic, true);
-
-
                 }
-
             }
         }//All if
-
     }
 
 
@@ -405,11 +387,31 @@ public class BluetoothLeService extends Service {
             Log.v("BT", "Rx char not found on RxService!");
             return;
         }
-        byte[] strBytes = Jetec.getBytes();
-        RxChar.setValue(strBytes);
-        mBluetoothGatt.writeCharacteristic(RxChar);
 
-        Log.v("BT", "發送"+Jetec);
+
+
+
+        if (i == 0) {
+            byte[] strBytes = Jetec.getBytes();
+            RxChar.setValue(strBytes);
+            Log.v("BT", "發送" + Jetec+",i= "+i);
+            mBluetoothGatt.writeCharacteristic(RxChar);
+            i++;
+
+        }else if(i ==1){
+            byte[] strBytes = PASSWD.getBytes();
+            RxChar.setValue(strBytes);
+            Log.v("BT", "發送" + PASSWD+",i= "+i);
+            mBluetoothGatt.writeCharacteristic(RxChar);
+            i++;
+
+        }
+
+
+
+
+
+
     }
 
 

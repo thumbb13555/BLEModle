@@ -54,6 +54,12 @@
     </LinearLayout>
 
 
+    <Button
+        android:id="@+id/SendDataButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="快速連線"
+        android:onClick="sendData"/>
 
     <ExpandableListView android:id="@+id/gatt_services_list"
             android:layout_width="match_parent"

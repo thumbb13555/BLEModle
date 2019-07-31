@@ -27,15 +27,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ExpandableListView;
 import android.widget.SimpleExpandableListAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,7 +57,6 @@ public class DeviceControlActivity extends Activity {
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
 
-    public String Jecet = "Jetec";
     private TextView mConnectionState;
     private TextView mDataField;
     private String mDeviceName;
@@ -68,6 +70,7 @@ public class DeviceControlActivity extends Activity {
 
     private final String LIST_NAME = "NAME";
     private final String LIST_UUID = "UUID";
+    Button btnSendData;
 
     // Code to manage Service lifecycle.
 
@@ -103,66 +106,72 @@ public class DeviceControlActivity extends Activity {
             final String action = intent.getAction();
 
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
-
                 mConnected = true;
                 updateConnectionState(R.string.connected);
                 invalidateOptionsMenu();
-            } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
+                btnSendData = (Button) findViewById(R.id.SendDataButton);
+                btnSendData.setVisibility(View.VISIBLE);
 
+            } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
                 updateConnectionState(R.string.disconnected);
                 invalidateOptionsMenu();
                 clearUI();
-
+                btnSendData.setVisibility(View.GONE);
                 /**接下來是重點===============*/
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
-
                 //連接的同時最後一步會到這裡，也許這裡是發送的地方
-
-
                 displayGattServices(mBluetoothLeService.getSupportedGattServices());
-                /** https://www.itread01.com/articles/1478283945.html 的方法*/
-                //寫數據的服務和characteristic
-//                mnotyGattService = mBluetoothLeService.getSupportedGattServices(UUID.fromString("0000ffe5-0000-1000-8000-00805f9b34fb"));
-//                characteristic = mnotyGattService.getCharacteristic(UUID.fromString("0000ffe9-0000-1000-8000-00805f9b34fb"));
-                //讀數據的服務和characteristic
-//                readMnotyGattService = mBluetoothLeService.getSupportedGattServices(UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb"));
-//                readCharacteristic = readMnotyGattService.getCharacteristic(UUID.fromString("0000ffe4-0000-1000-8000-00805f9b34fb"));
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-
                 displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
             }
         }
     };//onReceive
-    public void startSend(View view){
 
-
-    }
 
     // If a given GATT characteristic is selected, check for supported features.  This sample
     // demonstrates 'Read' and 'Notify' features.  See
     // http://d.android.com/reference/android/bluetooth/BluetoothGatt.html for the complete
     // list of supported characteristic features.
+
+    public void sendData(View view){
+            view.setVisibility(View.VISIBLE);
+            Toast.makeText(this, "執行所有流程", Toast.LENGTH_LONG).show();
+            final BluetoothGattCharacteristic characteristic =
+                    mGattCharacteristics.get(2).get(0);
+            mNotifyCharacteristic = characteristic;
+            mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+        final Intent intent = new Intent(this, BluetoothLeService.class);
+        intent.putExtra(BluetoothLeService.SEND_VALUE,"Jetec");
+
+    }
+
     private final ExpandableListView.OnChildClickListener servicesListClickListner =
             new ExpandableListView.OnChildClickListener() {
                 @Override
                 public boolean onChildClick(ExpandableListView parent, View v, int groupPosition,
                                             int childPosition, long id) {
                     if (mGattCharacteristics != null) {
+                        Log.v("BT","1");
                         final BluetoothGattCharacteristic characteristic =
                                 mGattCharacteristics.get(groupPosition).get(childPosition);
+
                         final int charaProp = characteristic.getProperties();
                         if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
                             // If there is an active notification on a characteristic, clear
                             // it first so it doesn't update the data field on the user interface.
+                            Log.v("BT","2");
+                            mBluetoothLeService.readCharacteristic(characteristic);
                             if (mNotifyCharacteristic != null) {
+                                Log.v("BT","3");
                                 mBluetoothLeService.setCharacteristicNotification(
                                         mNotifyCharacteristic, false);
                                 mNotifyCharacteristic = null;
                             }
-                            mBluetoothLeService.readCharacteristic(characteristic);
                         }
                         if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                            Log.v("BT","4");
+                            Log.v("BT",groupPosition+" "+childPosition);
                             mNotifyCharacteristic = characteristic;
                             mBluetoothLeService.setCharacteristicNotification(
                                     characteristic, true);
@@ -198,6 +207,8 @@ public class DeviceControlActivity extends Activity {
         getActionBar().setDisplayHomeAsUpEnabled(true);
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+        btnSendData = (Button) findViewById(R.id.SendDataButton);
+        btnSendData.setVisibility(View.GONE);
     }
 
     @Override
@@ -227,6 +238,7 @@ public class DeviceControlActivity extends Activity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.gatt_services, menu);
         if (mConnected) {
+
             menu.findItem(R.id.menu_connect).setVisible(false);
             menu.findItem(R.id.menu_disconnect).setVisible(true);
         } else {
@@ -264,6 +276,11 @@ public class DeviceControlActivity extends Activity {
     private void displayData(String data) {
         if (data != null) {
             mDataField.setText(data);
+        }if(data.contains("BT-2-TH")){
+            final BluetoothGattCharacteristic characteristic =
+                    mGattCharacteristics.get(2).get(0);
+            mNotifyCharacteristic = characteristic;
+            mBluetoothLeService.setCharacteristicNotification(characteristic, true);
         }
     }
 
@@ -286,7 +303,7 @@ public class DeviceControlActivity extends Activity {
 
         // Loops through available GATT Services.
         //將可用的GATT Service迴圈顯示
-        /**這邊顯示的是關於裝置特的基本性質*/
+        /**這邊顯示的是關於裝置的基本性質*/
         for (BluetoothGattService gattService : gattServices) {
             HashMap<String, String> currentServiceData = new HashMap<String, String>();
             uuid = gattService.getUuid().toString();
@@ -329,7 +346,7 @@ public class DeviceControlActivity extends Activity {
                 new String[]{LIST_NAME, LIST_UUID},
                 new int[]{android.R.id.text1, android.R.id.text2}
         );
-        mGattServicesList.setAdapter(gattServiceAdapter);
+      //  mGattServicesList.setAdapter(gattServiceAdapter);
     }
 
     private static IntentFilter makeGattUpdateIntentFilter() {
