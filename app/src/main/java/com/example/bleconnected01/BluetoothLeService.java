@@ -335,8 +335,10 @@ public class BluetoothLeService extends Service {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
         }
+
         mBluetoothGatt.readCharacteristic(characteristic);
         String record = characteristic.getStringValue(0);
+
 
 
         Log.v("BT", "readCharacteristic回傳: " + record);
