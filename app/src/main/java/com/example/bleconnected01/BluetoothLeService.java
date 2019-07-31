@@ -18,6 +18,7 @@ package com.example.bleconnected01;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -31,6 +32,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.View;
 
 import java.util.List;
 import java.util.UUID;
@@ -42,37 +44,50 @@ import java.util.UUID;
 public class BluetoothLeService extends Service {
     private final static String TAG = BluetoothLeService.class.getSimpleName();
 
-    private BluetoothManager mBluetoothManager;
-    private BluetoothAdapter mBluetoothAdapter;
-    private String mBluetoothDeviceAddress;
+    private BluetoothManager mBluetoothManager;//藍芽管理器
+    private BluetoothAdapter mBluetoothAdapter;//藍芽適配器
+    private String mBluetoothDeviceAddress;//藍芽設備位址
     private BluetoothGatt mBluetoothGatt;
     private int mConnectionState = STATE_DISCONNECTED;
+    BluetoothGattCharacteristic characteristic;
+    boolean enabled;
+    public String Jetec = "Jetec";
 
-    private static final int STATE_DISCONNECTED = 0;
-    private static final int STATE_CONNECTING = 1;
-    private static final int STATE_CONNECTED = 2;
+    private static final int STATE_DISCONNECTED = 0;//設備無法連接
+    private static final int STATE_CONNECTING = 1;//設備正在連接
+    private static final int STATE_CONNECTED = 2;//設備連接完畢
 
     public final static String ACTION_GATT_CONNECTED =
-            "com.example.bluetooth.le.ACTION_GATT_CONNECTED";
+            "com.example.bluetooth.le.ACTION_GATT_CONNECTED";//已連接到GATT服務器
     public final static String ACTION_GATT_DISCONNECTED =
-            "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED";
+            "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED";//未連接GATT服務器
     public final static String ACTION_GATT_SERVICES_DISCOVERED =
-            "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED";
+            "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED";//未發現GATT服務
     public final static String ACTION_DATA_AVAILABLE =
-            "com.example.bluetooth.le.ACTION_DATA_AVAILABLE";
-    public final static String EXTRA_DATA =
-            "com.example.bluetooth.le.EXTRA_DATA";
+            "com.example.bluetooth.le.ACTION_DATA_AVAILABLE";//接收到來自設備的數據，可通過讀取或操作獲得
+
+    public final static String EXTRA_DATA = "com.example.bluetooth.le.EXTRA_DATA"; //其他數據
 
     public final static UUID UUID_HEART_RATE_MEASUREMENT =
             UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
+    public static String Service_uuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    public static String Characteristic_uuid_TX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";//這是接收的
+    public static String Characteristic_uuid_RX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";//這是發射的
+    public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
 
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
+    /**
+     * 通過BLE API的不同類型的連接方法
+     */
+
+
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
+        /**當連接狀態發生改變*/
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             String intentAction;
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
+            if (newState == BluetoothProfile.STATE_CONNECTED) {//當設備已連接
                 intentAction = ACTION_GATT_CONNECTED;
                 mConnectionState = STATE_CONNECTED;
                 broadcastUpdate(intentAction);
@@ -81,7 +96,7 @@ public class BluetoothLeService extends Service {
                 Log.i(TAG, "Attempting to start service discovery:" +
                         mBluetoothGatt.discoverServices());
 
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {//當設備無法連接
                 intentAction = ACTION_GATT_DISCONNECTED;
                 mConnectionState = STATE_DISCONNECTED;
                 Log.i(TAG, "Disconnected from GATT server.");
@@ -89,36 +104,69 @@ public class BluetoothLeService extends Service {
             }
         }
 
+        /**當發現新的服務器*/
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+
             if (status == BluetoothGatt.GATT_SUCCESS) {
+
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
             }
         }
 
+        /**讀寫特性*/
         @Override
-        public void onCharacteristicRead(BluetoothGatt gatt,
-                                         BluetoothGattCharacteristic characteristic,
-                                         int status) {
+        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            Log.v("BT", "onCharacteristicRead");
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             }
         }
 
+        /**廣播更新*/
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
+            readCharacteristic(characteristic);
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+        }
+
+        @Override
+        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            super.onDescriptorRead(gatt, descriptor, status);
+            Log.v("BT", "AT onDescriptorRead. " + "descriptor: "
+                    + descriptor.getUuid() + ". characteristic: "
+                    + descriptor.getCharacteristic().getUuid()
+                    + ". status: " + status);
+        }
+
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            super.onCharacteristicWrite(gatt, characteristic, status);
+            Log.v("BT", "花送成功");
+        }
+
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            super.onDescriptorWrite(gatt, descriptor, status);
+            writeCustomCharacteristic();
+
         }
     };
 
+
     private void broadcastUpdate(final String action) {
+
         final Intent intent = new Intent(action);
         sendBroadcast(intent);
     }
 
+    /**
+     * 當一個特定的回調函數被觸發時，他會調用相應的broadcastUpdate()輔助方法
+     * 並傳遞給他一個action，以下官網範例為藍芽心率測量文件範例
+     */
     private void broadcastUpdate(final String action,
                                  final BluetoothGattCharacteristic characteristic) {
         final Intent intent = new Intent(action);
@@ -126,7 +174,9 @@ public class BluetoothLeService extends Service {
         // This is special handling for the Heart Rate Measurement profile.  Data parsing is
         // carried out as per profile specifications:
         // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
+        //以下是心率测量配置文件。====================================================
         if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
+            Log.v("BT", "broadcastUpdate->UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())");
             int flag = characteristic.getProperties();
             int format = -1;
             if ((flag & 0x01) != 0) {
@@ -139,16 +189,19 @@ public class BluetoothLeService extends Service {
             final int heartRate = characteristic.getIntValue(format, 1);
             Log.d(TAG, String.format("Received heart rate: %d", heartRate));
             intent.putExtra(EXTRA_DATA, String.valueOf(heartRate));
+            //以上是心率测量配置文件。====================================================
         } else {
             // For all other profiles, writes the data formatted in HEX.
+            /**對於所有其他配置文件，以十六進制寫數據*/
             final byte[] data = characteristic.getValue();
             if (data != null && data.length > 0) {
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
-                for(byte byteChar : data)
+                for (byte byteChar : data)
                     stringBuilder.append(String.format("%02X ", byteChar));
                 intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
             }
         }
+
         sendBroadcast(intent);
     }
 
@@ -203,12 +256,12 @@ public class BluetoothLeService extends Service {
      * Connects to the GATT server hosted on the Bluetooth LE device.
      *
      * @param address The device address of the destination device.
-     *
      * @return Return true if the connection is initiated successfully. The connection result
-     *         is reported asynchronously through the
-     *         {@code BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)}
-     *         callback.
+     * is reported asynchronously through the
+     * {@code BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)}
+     * callback.
      */
+
     public boolean connect(final String address) {
         if (mBluetoothAdapter == null || address == null) {
             Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
@@ -274,41 +327,89 @@ public class BluetoothLeService extends Service {
      *
      * @param characteristic The characteristic to read from.
      */
+    /**
+     * 在這裏讀取藍芽中數據
+     */
     public void readCharacteristic(BluetoothGattCharacteristic characteristic) {
         if (mBluetoothAdapter == null || mBluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
         }
         mBluetoothGatt.readCharacteristic(characteristic);
-        Log.v("BT","顯示讀取的值: "+"\n"
-                        +"讀資料 offset0: "+characteristic.getStringValue(0)+"\n");
+        String record = characteristic.getStringValue(0);
+
+
+        Log.v("BT", "readCharacteristic回傳: " + record);
     }
-
-
 
     /**
      * Enables or disables notification on a give characteristic.
      *
      * @param characteristic Characteristic to act on.
-     * @param enabled If true, enable notification.  False otherwise.
+     * @param enabled        If true, enable notification.  False otherwise.
      */
     public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic,
                                               boolean enabled) {
+        /**接收GATT通知:當設備上的特性(應該是Characteristic)改變時會通知BLE應用程序
+         * 以下為顯示如何使用setCharacteristicNotification()給一個特性設置通知*/
+        /**照前輩的說法這邊是開啟訂閱*/
         if (mBluetoothAdapter == null || mBluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
         }
-        mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
-        //BT-2-THL
+        UUID ServiceUUID = UUID.fromString(Service_uuid);
+        UUID TXUUID = UUID.fromString(Characteristic_uuid_TX);
+        if (!mBluetoothGatt.equals(null)) {
+            BluetoothGattService service = mBluetoothGatt.getService(ServiceUUID);
+            if (service != null) {
+                BluetoothGattCharacteristic chara = service.getCharacteristic(TXUUID);
+                if (chara != null) {
+                    boolean success = mBluetoothGatt.setCharacteristicNotification(chara, enabled);
 
-        // This is specific to Heart Rate Measurement.
-        if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
-            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
-                    UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
-            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-            mBluetoothGatt.writeDescriptor(descriptor);
-        }
+                    BluetoothGattDescriptor descriptor = chara.getDescriptor(UUID.fromString(CLIENT_CHARACTERISTIC_CONFIG));
+                    if (descriptor != null) {
+                    }
+                    if (enabled) {
+                        Log.v("BT", "訂閱(enable)= " + enabled);
+                        descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+                    } else {
+                        descriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+                    }
+                    /**加了這行就成功了; https://blog.csdn.net/kieven2008/article/details/56489900*/
+                    for (BluetoothGattDescriptor dp : characteristic.getDescriptors()) {
+                        dp.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                        mBluetoothGatt.writeDescriptor(dp);
+                    }
+                    mBluetoothGatt.writeDescriptor(descriptor);
+                    mBluetoothGatt.setCharacteristicNotification(characteristic, true);
+
+
+                }
+
+            }
+        }//All if
+
     }
+
+
+    public void writeCustomCharacteristic() {
+        BluetoothGattService RxService = mBluetoothGatt.getService(UUID.fromString(Service_uuid));
+        if (RxService == null) {
+            Log.v("BT", "Rx service not found on RxService!");
+            return;
+        }
+        BluetoothGattCharacteristic RxChar = RxService.getCharacteristic(UUID.fromString(Characteristic_uuid_RX));
+        if (RxChar == null) {
+            Log.v("BT", "Rx char not found on RxService!");
+            return;
+        }
+        byte[] strBytes = Jetec.getBytes();
+        RxChar.setValue(strBytes);
+        mBluetoothGatt.writeCharacteristic(RxChar);
+
+        Log.v("BT", "發送"+Jetec);
+    }
+
 
     /**
      * Retrieves a list of supported GATT services on the connected device. This should be
@@ -321,4 +422,5 @@ public class BluetoothLeService extends Service {
 
         return mBluetoothGatt.getServices();
     }
+
 }
