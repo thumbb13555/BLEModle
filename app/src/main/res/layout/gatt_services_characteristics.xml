@@ -58,7 +58,8 @@
         android:id="@+id/SendDataButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="快速連線"
+        android:text="開始連線"
+        android:textSize="20dp"
         android:onClick="sendData"/>
 
     <ExpandableListView android:id="@+id/gatt_services_list"

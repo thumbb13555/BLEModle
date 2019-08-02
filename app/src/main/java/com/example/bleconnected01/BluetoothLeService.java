@@ -29,12 +29,14 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import java.util.List;
 import java.util.UUID;
@@ -52,11 +54,12 @@ public class BluetoothLeService extends Service {
     private BluetoothGatt mBluetoothGatt;
     private int mConnectionState = STATE_DISCONNECTED;
     BluetoothGattCharacteristic characteristic;
-    boolean enabled;
     public String Jetec = "Jetec";
     public String PASSWD = "PASSWD";
-    public static final String SEND_VALUE = "SEND_VALUE";
-    private static int i = 0;
+    public String get = "get";
+
+    private  int i = 0;
+
 
     private static final int STATE_DISCONNECTED = 0;//設備無法連接
     private static final int STATE_CONNECTING = 1;//設備正在連接
@@ -321,9 +324,9 @@ public class BluetoothLeService extends Service {
         mBluetoothGatt.readCharacteristic(characteristic);
         String record = characteristic.getStringValue(0);
         Log.v("BT", "readCharacteristic回傳: " + record);
-        SystemClock.sleep(2000);
-        Intent intent = new Intent();
-        
+        SystemClock.sleep(1000);
+
+
 
 
 
@@ -389,8 +392,6 @@ public class BluetoothLeService extends Service {
         }
 
 
-
-
         if (i == 0) {
             byte[] strBytes = Jetec.getBytes();
             RxChar.setValue(strBytes);
@@ -398,21 +399,23 @@ public class BluetoothLeService extends Service {
             mBluetoothGatt.writeCharacteristic(RxChar);
             i++;
 
-        }else if(i ==1){
+        }else if(i ==1) {
             byte[] strBytes = PASSWD.getBytes();
             RxChar.setValue(strBytes);
-            Log.v("BT", "發送" + PASSWD+",i= "+i);
+            Log.v("BT", "發送" + PASSWD + ",i= " + i);
             mBluetoothGatt.writeCharacteristic(RxChar);
             i++;
-
+        }else if(i == 2){
+            byte[] strBytes = get.getBytes();
+            RxChar.setValue(strBytes);
+            Log.v("BT", "發送" + get+",i= "+i);
+            mBluetoothGatt.writeCharacteristic(RxChar);
+            i--;
+            i--;
         }
 
-
-
-
-
-
     }
+
 
 
     /**

@@ -17,6 +17,8 @@
 package com.example.bleconnected01;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -24,6 +26,7 @@ import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -31,10 +34,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.SimpleExpandableListAdapter;
 import android.widget.TextView;
@@ -65,6 +71,7 @@ public class DeviceControlActivity extends Activity {
     private BluetoothLeService mBluetoothLeService;
     private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
             new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
+
     private boolean mConnected = false;
     private BluetoothGattCharacteristic mNotifyCharacteristic;
 
@@ -93,6 +100,70 @@ public class DeviceControlActivity extends Activity {
             mBluetoothLeService = null;
         }
     };//serviceConnection
+    public void sendData(View view){
+        view.setVisibility(View.VISIBLE);
+        Toast.makeText(this, "開始連線", Toast.LENGTH_LONG).show();
+
+        final BluetoothGattCharacteristic characteristic =
+                mGattCharacteristics.get(2).get(0);
+        mNotifyCharacteristic = characteristic;
+        mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+
+    }//sendData
+    private void displayData(String data) {
+        if (data != null) {
+            mDataField.setText(data);
+        }if(data.contains("BT-2-TH")){
+
+            final BluetoothGattCharacteristic characteristic =
+                    mGattCharacteristics.get(2).get(0);
+            mNotifyCharacteristic = characteristic;
+            mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+        }if (data.contains("PASS000000")){
+            AlertDialog.Builder mBuidler = new AlertDialog.Builder(DeviceControlActivity.this);
+            View v = getLayoutInflater().inflate(R.layout.alertdialog_use, null);
+            final EditText edInput = (EditText) v.findViewById(R.id.editText1);
+            mBuidler.setTitle("請輸入裝置密碼:");
+            mBuidler.setPositiveButton("確定", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            });
+            mBuidler.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    finish();
+                }
+            });
+            mBuidler.setView(v);
+            final AlertDialog dialog = mBuidler.create();
+            dialog.setCanceledOnTouchOutside(false);
+            dialog.setCancelable(false);
+            dialog.show();
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if(!edInput.getText().toString().isEmpty() && edInput.getText().toString().equals("000000")){
+                        Toast.makeText(getBaseContext(),"登入成功",Toast.LENGTH_LONG).show();
+                        dialog.dismiss();
+                        final BluetoothGattCharacteristic characteristic =
+                                mGattCharacteristics.get(2).get(0);
+                        mNotifyCharacteristic = characteristic;
+                        mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+                        Intent intent = new Intent(DeviceControlActivity.this,DataDisplayActivity.class);
+                        intent.putExtra("DeviceName",mDeviceName);
+                        intent.putExtra("DeviceAddress",mDeviceAddress);
+                        startActivity(intent);
+                        finish();
+
+                    }else{
+                        Toast.makeText(getBaseContext(),"登入失敗",Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }//data.contains("PASS000000")
+    }//displayData(回傳值都在這邊操作)
 
     // Handles various events fired by the Service.處理服務所激發的各種事件
     // ACTION_GATT_CONNECTED: connected to a GATT server. 連接一個GATT服務
@@ -123,6 +194,7 @@ public class DeviceControlActivity extends Activity {
                 //連接的同時最後一步會到這裡，也許這裡是發送的地方
                 displayGattServices(mBluetoothLeService.getSupportedGattServices());
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
+                /**接收來自Service的訊息*/
                 displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
             }
         }
@@ -134,17 +206,7 @@ public class DeviceControlActivity extends Activity {
     // http://d.android.com/reference/android/bluetooth/BluetoothGatt.html for the complete
     // list of supported characteristic features.
 
-    public void sendData(View view){
-            view.setVisibility(View.VISIBLE);
-            Toast.makeText(this, "執行所有流程", Toast.LENGTH_LONG).show();
-            final BluetoothGattCharacteristic characteristic =
-                    mGattCharacteristics.get(2).get(0);
-            mNotifyCharacteristic = characteristic;
-            mBluetoothLeService.setCharacteristicNotification(characteristic, true);
-        final Intent intent = new Intent(this, BluetoothLeService.class);
-        intent.putExtra(BluetoothLeService.SEND_VALUE,"Jetec");
 
-    }
 
     private final ExpandableListView.OnChildClickListener servicesListClickListner =
             new ExpandableListView.OnChildClickListener() {
@@ -195,6 +257,9 @@ public class DeviceControlActivity extends Activity {
         final Intent intent = getIntent();
         mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
         mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
+
+
+
 
         // Sets up UI references.
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
@@ -273,16 +338,8 @@ public class DeviceControlActivity extends Activity {
         });
     }
 
-    private void displayData(String data) {
-        if (data != null) {
-            mDataField.setText(data);
-        }if(data.contains("BT-2-TH")){
-            final BluetoothGattCharacteristic characteristic =
-                    mGattCharacteristics.get(2).get(0);
-            mNotifyCharacteristic = characteristic;
-            mBluetoothLeService.setCharacteristicNotification(characteristic, true);
-        }
-    }
+
+
 
     // Demonstrates how to iterate through the supported GATT Services/Characteristics.
     // In this sample, we populate the data structure that is bound to the ExpandableListView
