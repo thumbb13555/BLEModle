@@ -61,6 +61,7 @@ public class BluetoothLeService extends Service {
     private  int i = 0;
 
 
+
     private static final int STATE_DISCONNECTED = 0;//設備無法連接
     private static final int STATE_CONNECTING = 1;//設備正在連接
     private static final int STATE_CONNECTED = 2;//設備連接完畢
@@ -324,10 +325,7 @@ public class BluetoothLeService extends Service {
         mBluetoothGatt.readCharacteristic(characteristic);
         String record = characteristic.getStringValue(0);
         Log.v("BT", "readCharacteristic回傳: " + record);
-        SystemClock.sleep(1000);
-
-
-
+        SystemClock.sleep(100);
 
 
     }
@@ -392,26 +390,28 @@ public class BluetoothLeService extends Service {
         }
 
 
-        if (i == 0) {
+        if (i==0) {
             byte[] strBytes = Jetec.getBytes();
             RxChar.setValue(strBytes);
             Log.v("BT", "發送" + Jetec+",i= "+i);
             mBluetoothGatt.writeCharacteristic(RxChar);
             i++;
 
-        }else if(i ==1) {
+        }else if(i==1) {
             byte[] strBytes = PASSWD.getBytes();
             RxChar.setValue(strBytes);
-            Log.v("BT", "發送" + PASSWD + ",i= " + i);
+            Log.v("BT", "發送" + PASSWD + ",i= "+i );
             mBluetoothGatt.writeCharacteristic(RxChar);
             i++;
-        }else if(i == 2){
+
+        }else if(i==2){
             byte[] strBytes = get.getBytes();
             RxChar.setValue(strBytes);
             Log.v("BT", "發送" + get+",i= "+i);
             mBluetoothGatt.writeCharacteristic(RxChar);
             i--;
             i--;
+
         }
 
     }

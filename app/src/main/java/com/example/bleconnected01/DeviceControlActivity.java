@@ -33,6 +33,7 @@ import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -62,6 +63,8 @@ public class DeviceControlActivity extends Activity {
 
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
+    private String PV1,PV2,EH1,EL1,EH2,EL2,CR1,CR2,SPK;
+    private String Name1,Name2,Name3,Name4,Name5,Name6,Name7,Name8,Name9;
 
     private TextView mConnectionState;
     private TextView mDataField;
@@ -103,6 +106,8 @@ public class DeviceControlActivity extends Activity {
     public void sendData(View view){
         view.setVisibility(View.VISIBLE);
         Toast.makeText(this, "開始連線", Toast.LENGTH_LONG).show();
+
+
 
         final BluetoothGattCharacteristic characteristic =
                 mGattCharacteristics.get(2).get(0);
@@ -151,11 +156,11 @@ public class DeviceControlActivity extends Activity {
                                 mGattCharacteristics.get(2).get(0);
                         mNotifyCharacteristic = characteristic;
                         mBluetoothLeService.setCharacteristicNotification(characteristic, true);
-                        Intent intent = new Intent(DeviceControlActivity.this,DataDisplayActivity.class);
-                        intent.putExtra("DeviceName",mDeviceName);
-                        intent.putExtra("DeviceAddress",mDeviceAddress);
-                        startActivity(intent);
-                        finish();
+//                        Intent intent = new Intent(DeviceControlActivity.this,DataDisplayActivity.class);
+//                        intent.putExtra("DeviceName",mDeviceName);
+//                        intent.putExtra("DeviceAddress",mDeviceAddress);
+//                        startActivity(intent);
+//                        finish();
 
                     }else{
                         Toast.makeText(getBaseContext(),"登入失敗",Toast.LENGTH_SHORT).show();
@@ -163,6 +168,71 @@ public class DeviceControlActivity extends Activity {
                 }
             });
         }//data.contains("PASS000000")
+        if(data.contains("PV1")){
+            Name1 = data.substring(0,3);
+            PV1 = data.substring(4,10);
+
+        }else if(data.contains("PV2")){
+            Name2 = data.substring(0,3);
+            PV2 = data.substring(4,10);
+
+        }else if(data.contains("EH1")){
+            Name3 = data.substring(0,3);
+            EH1 = data.substring(4,10);
+
+        }else if(data.contains("EL1")){
+            Name4 = data.substring(0,3);
+            EL1 = data.substring(4,10);
+
+        }else if(data.contains("EH2")){
+            Name5 = data.substring(0,3);
+            EH2 = data.substring(4,10);
+
+        }else if(data.contains("EL2")){
+            Name6 = data.substring(0,3);
+            EL2 = data.substring(4,10);
+
+        }else if(data.contains("CR1")){
+            Name7 = data.substring(0,3);
+            CR1 = data.substring(4,10);
+
+        }else if(data.contains("CR2")){
+            Name8 = data.substring(0,3);
+            CR2 = data.substring(4,10);
+
+        }else if(data.contains("SPK")){
+            Name9 = data.substring(0,3);
+            SPK = data.substring(4,10);
+
+
+        }
+        if (data.contains("OVER")){
+            Intent intent = new Intent(DeviceControlActivity.this,DataDisplayActivity.class);
+
+            intent.putExtra("DeviceName",mDeviceName);
+            intent.putExtra("DeviceAddress",mDeviceAddress);
+            intent.putExtra("PV1",Name1);
+            intent.putExtra("PV1_Value",PV1);
+            intent.putExtra("PV2",Name2);
+            intent.putExtra("PV2_Value",PV2);
+            intent.putExtra("EH1",Name3);
+            intent.putExtra("EH1_Value",EH1);
+            intent.putExtra("EH2",Name4);
+            intent.putExtra("EH2_Value",EH2);
+            intent.putExtra("EL1",Name5);
+            intent.putExtra("EL1_Value",EL1);
+            intent.putExtra("EL2",Name6);
+            intent.putExtra("EL2_Value",EL2);
+            intent.putExtra("CR1",Name7);
+            intent.putExtra("CR1_Value",CR1);
+            intent.putExtra("CR2",Name8);
+            intent.putExtra("CR2_Value",CR2);
+            intent.putExtra("SPK",Name9);
+            intent.putExtra("SPK_Value",SPK);
+            startActivity(intent);
+            finish();
+        }
+
     }//displayData(回傳值都在這邊操作)
 
     // Handles various events fired by the Service.處理服務所激發的各種事件
