@@ -29,6 +29,7 @@ public class SampleGattAttributes {
     public static String Characteristic_uuid_TX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
     public static String Characteristic_uuid_RX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 
+
     static {
         // Sample Services.
         attributes.put("0000180d-0000-1000-8000-00805f9b34fb", "Heart Rate Service");
