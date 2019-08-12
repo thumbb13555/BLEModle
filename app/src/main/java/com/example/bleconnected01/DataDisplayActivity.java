@@ -197,7 +197,7 @@ public class DataDisplayActivity extends Activity {
                 if (GetName.contains("第一排補正")) {
                     edInput.setHint("-999~999");
                 } else {
-                    edInput.setHint("-9999~9999");
+                    edInput.setHint("-9999~9999" );
                 }
             }
 
