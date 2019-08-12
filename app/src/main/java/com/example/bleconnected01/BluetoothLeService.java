@@ -396,11 +396,11 @@ public class BluetoothLeService extends Service {
 
         }else if(record.contains("DP1")){
             Name14 = record.substring(0,3);
-            DP1 = record.substring(3,10);
+            DP1 = record.substring(4,10);
 
         }else if(record.contains("DP2")){
             Name15 = record.substring(0,3);
-            DP2 = record.substring(3,10);
+            DP2 = record.substring(4,10);
 
         }
 

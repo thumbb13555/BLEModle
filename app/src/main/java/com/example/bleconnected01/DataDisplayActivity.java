@@ -67,6 +67,8 @@ public class DataDisplayActivity extends Activity {
         DeviceControlActivity.closefromDD.finish();
         DeviceName = DeviceScanActivity.Devicename;
         DeviceAddress = DeviceScanActivity.DeviceAddress;
+
+        /**決定往哪裡跑！！！！！！！！！！！！！！！！！*/
         if(DeviceControlActivity.DeviceType.contains("BT-2-TH"))
         {
             Device_BT_2_TH();
@@ -74,59 +76,259 @@ public class DataDisplayActivity extends Activity {
             Log.v("BT","DeviceDisplay待寫");
             Device_BT_2_II();
         }
-
+        /**決定往哪裡跑！！！！！！！！！！！！！！！！！*/
 
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
-
         getActionBar().setTitle(DeviceScanActivity.Devicename);
 
 
     }//onCreate
     private void Device_BT_2_II(){
         Intent intent = this.getIntent();
+        Name10  = intent.getStringExtra("IH1");
+        Name10  = "第一排最大量程";
+        IH1     = intent.getStringExtra("IH1_Value");
+
+        Name11  = intent.getStringExtra("IL1");
+        Name11  = "第一排最小量程";
+        IL1     = intent.getStringExtra("IL1_Value");
+
+        Name12  = intent.getStringExtra("IH2");
+        Name12  = "第二排最大量程";
+        IH2     = intent.getStringExtra("IH2_Value");
+
+        Name13  = intent.getStringExtra("IL2");
+        Name13  = "第二排最小量程";
+        IL2     = intent.getStringExtra("IL2_Value");
+
+        Name1   = intent.getStringExtra("PV1");
+        Name1   = "第一排補正";
+        PV1     = intent.getStringExtra("PV1_Value");
+
+        Name2   = intent.getStringExtra("PV2");
+        Name2   = "第二排補正";
+        PV2     = intent.getStringExtra("PV2_Value");
+
+        Name3   = intent.getStringExtra("EH1");
+        Name3   = "第一排上限警報";
+        EH1     = intent.getStringExtra("EH1_Value");
+
+        Name5   = intent.getStringExtra("EL1");
+        Name5   = "第一排下限警報";
+        EL1     = intent.getStringExtra("EL1_Value");
+
+        Name4   = intent.getStringExtra("EH2");
+        Name4   = "第二排上限警報";
+        EH2     = intent.getStringExtra("EH2_Value");
+
+        Name6   = intent.getStringExtra("EL2");
+        Name6   = "第二排下限警報";
+        EL2     = intent.getStringExtra("EL2_Value");
+
+        Name7   = intent.getStringExtra("CR1");
+        Name7   = "第一排顏色轉換";
+        CR1     = intent.getStringExtra("CR1_Value");
+
+        Name8   = intent.getStringExtra("CR2");
+        Name8   = "第二排顏色轉換";
+        CR2     = intent.getStringExtra("CR2_Value");
+
+        Name9   = intent.getStringExtra("SPK");
+        Name9   = "警報聲";
+        SPK     = intent.getStringExtra("SPK_Value");
+
+        Name14  = intent.getStringExtra("DP1");
+        Name14  = "第一排小數點";
+        DP1     = intent.getStringExtra("DP1_Value");
+        if (DP1.contains("0000.0")){
+            DP1 = "off";
+        }else {
+            DP1 = "on";
+        }
+
+        Name15  = intent.getStringExtra("DP2");
+        Name15  = "第二排小數點";
+        DP2     = intent.getStringExtra("DP2_Value");
+        if (DP2.contains("0000.0")){
+            DP2 = "off";
+        }else {
+            DP2 = "on";
+        }
+
+        final String[] nameItems   =  {"裝置名稱",Name10,Name11,Name12,Name13,Name1,Name2,Name3,Name5,Name4
+                                        ,Name6,Name7,Name8,Name9,Name14,Name15};
+        final String[] valuesItems =  {DeviceName,IH1,IL1,IH2,IL2,PV1,PV2,EH1,EH2,EL1,EL2,CR1,CR2,SPK
+                                        ,DP1,DP2};
+
+        SimpleListView = findViewById(R.id.listView);
+
+        final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
+        for(int i = 0;i<nameItems.length; i++){
+            HashMap<String,String> hashMap = new HashMap<>();
+            hashMap.put("name",nameItems[i]);
+            hashMap.put("values",valuesItems[i]);
+            arrayList.add(hashMap);
+        }
+        String[] from = {"name","values"};
+        int[] to = {R.id.TitleName,R.id.ResultValue};
+        final SimpleAdapter simpleAdapter =
+                new SimpleAdapter(this,arrayList,R.layout.style_listview,from,to);
+        SimpleListView.setAdapter(simpleAdapter);
 
 
+        SimpleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                String GetName = nameItems[position];
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(DataDisplayActivity.this);
+                View v = getLayoutInflater().inflate(R.layout.alertdialog_use, null);
+                final EditText edInput = (EditText) v.findViewById(R.id.editText1);
+                final Switch swInput = (Switch) v.findViewById(R.id.theSwitch);
+
+
+            if (DP1.contains("on")) {
+                if (GetName.contains("第一排補正")) {
+                    edInput.setHint("-99.9~99.9");
+                } else {
+                    edInput.setHint("-199.9~999.9");
+                }
+            }else{
+                if (GetName.contains("第一排補正")) {
+                    edInput.setHint("-999~999");
+                } else {
+                    edInput.setHint("-9999~9999");
+                }
+            }
+
+                switch (GetName){
+                    case "第一排最大量程":
+                        swInput.setVisibility(View.GONE);
+                        mBuilder.setTitle(GetName);
+                        mBuilder.setPositiveButton("確定", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                            }
+                        });
+                        mBuilder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        });
+                        mBuilder.setView(v);
+                        final AlertDialog dialog = mBuilder.create();
+                        dialog.setCanceledOnTouchOutside(false);
+                        dialog.setCancelable(false);
+                        dialog.show();
+                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                String Input = edInput.getText().toString().trim();
+                                String HintText = edInput.getHint().toString();
+                                double toDoubleForInput = Double.parseDouble(Input);
+                                double toDoubleForHint = Double.parseDouble(HintText);
+                                if (toDoubleForHint > -199 && toDoubleForHint <999.9){
+
+                                }else{
+
+                                }
+
+                            }
+                        });
+
+                        break;
+                    case "第一排最小量程":
+
+                        break;
+                    case "第二排最大量程":
+
+                        break;
+                    case "第二排最小量程":
+
+                        break;
+                    case "第一排補正":
+
+                        break;
+                    case "第二排補正":
+
+                        break;
+                    case "第一排上限警報":
+
+                        break;
+                    case "第一排下限警報":
+
+                        break;
+                    case "第二排上限警報":
+
+                        break;
+                    case "第二排下限警報":
+
+                        break;
+                    case "第一排顏色轉換":
+
+                        break;
+                    case "第二排顏色轉換":
+
+                        break;
+                    case "警報聲":
+
+                        break;
+                    case "第一排小數點":
+
+
+                        break;
+                    case "第二排小數點":
+
+                        break;
+
+
+
+                }
+
+
+            }
+        });
     }
 
 
     private void Device_BT_2_TH(){
         Intent intent = this.getIntent();
-        Name1 = intent.getStringExtra("PV1");
-        Name1 = "溫度補正";
-        PV1 = intent.getStringExtra("PV1_Value");
+        Name1   = intent.getStringExtra("PV1");
+        Name1   = "溫度補正";
+        PV1     = intent.getStringExtra("PV1_Value");
 
-        Name2 = intent.getStringExtra("PV2");
-        Name2 = "濕度補正";
-        PV2 = intent.getStringExtra("PV2_Value");
+        Name2   = intent.getStringExtra("PV2");
+        Name2   = "濕度補正";
+        PV2     = intent.getStringExtra("PV2_Value");
 
-        Name3 = intent.getStringExtra("EH1");
-        Name3 = "溫度上限警報";
-        EH1 = intent.getStringExtra("EH1_Value");
+        Name3   = intent.getStringExtra("EH1");
+        Name3   = "溫度上限警報";
+        EH1     = intent.getStringExtra("EH1_Value");
 
-        Name4 = intent.getStringExtra("EH2");
-        Name4 = "溫度下限警報";
-        EH2 = intent.getStringExtra("EH2_Value");
+        Name4   = intent.getStringExtra("EH2");
+        Name4   = "溫度下限警報";
+        EH2     = intent.getStringExtra("EH2_Value");
 
-        Name5 = intent.getStringExtra("EL1");
-        Name5 = "濕度上限警報";
-        EL1 = intent.getStringExtra("EL1_Value");
+        Name5   = intent.getStringExtra("EL1");
+        Name5   = "濕度上限警報";
+        EL1     = intent.getStringExtra("EL1_Value");
 
-        Name6 = intent.getStringExtra("EL2");
-        Name6 = "濕度下限警報";
-        EL2 = intent.getStringExtra("EL2_Value");
+        Name6   = intent.getStringExtra("EL2");
+        Name6   = "濕度下限警報";
+        EL2     = intent.getStringExtra("EL2_Value");
 
-        Name7 = intent.getStringExtra("CR1");
-        Name7 = "溫度顏色轉換";
-        CR1 = intent.getStringExtra("CR1_Value");
+        Name7   = intent.getStringExtra("CR1");
+        Name7   = "溫度顏色轉換";
+        CR1     = intent.getStringExtra("CR1_Value");
 
-        Name8 = intent.getStringExtra("CR2");
-        Name8 = "濕度顏色轉換";
-        CR2 = intent.getStringExtra("CR2_Value");
+        Name8   = intent.getStringExtra("CR2");
+        Name8   = "濕度顏色轉換";
+        CR2     = intent.getStringExtra("CR2_Value");
 
-        Name9 = intent.getStringExtra("SPK");
-        Name9 = "警報聲";
-        SPK = intent.getStringExtra("SPK_Value");
+        Name9   = intent.getStringExtra("SPK");
+        Name9   = "警報聲";
+        SPK     = intent.getStringExtra("SPK_Value");
 
         final String[] nameItems={"裝置名稱",Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9};
         final String[] valuesItems = {DeviceName,PV1,PV2,EH1,EH2,EL1,EL2,CR1,CR2,SPK};
