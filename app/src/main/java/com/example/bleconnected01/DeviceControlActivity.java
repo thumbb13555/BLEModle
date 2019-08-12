@@ -67,6 +67,7 @@ public class DeviceControlActivity extends Activity {
     public static Activity closefromDD;
 
     public static String Sendtype ;
+    public static String DeviceType;
     public static BluetoothGattCharacteristic theData;
     private TextView mConnectionState;
     private TextView mDataField;
@@ -123,13 +124,21 @@ public class DeviceControlActivity extends Activity {
         if (data != null) {
             mDataField.setText(data);
         }
-        if (data.contains("BT-")) {
+        if (data.contains("BT-2-TH")) {
 
 //            final BluetoothGattCharacteristic characteristic =
 //                    mGattCharacteristics.get(2).get(0);
 //            mNotifyCharacteristic = characteristic;
-            mBluetoothLeService.setCharacteristicNotification(mNotifyCharacteristic, true);
             Sendtype = "PASSWD";
+            DeviceType="BT-2-TH";
+            mBluetoothLeService.setCharacteristicNotification(mNotifyCharacteristic, true);
+
+        }else if(data.contains("BT-2-II")){
+            Log.v("BT","現在的模式為BT-2-II");
+            Sendtype = "PASSWD";
+            DeviceType = "BT-2-II";
+            mBluetoothLeService.setCharacteristicNotification(mNotifyCharacteristic, true);
+
         }
         if (data.contains("PASS000000")) {
             AlertDialog.Builder mBuidler = new AlertDialog.Builder(DeviceControlActivity.this);

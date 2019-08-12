@@ -67,13 +67,13 @@ public class DataDisplayActivity extends Activity {
         DeviceControlActivity.closefromDD.finish();
         DeviceName = DeviceScanActivity.Devicename;
         DeviceAddress = DeviceScanActivity.DeviceAddress;
-
-
+        if(DeviceControlActivity.DeviceType.contains("BT-2-TH"))
+        {
             Device_BT_2_TH();
-
-
-
-
+        }else if(DeviceControlActivity.DeviceType.contains("BT-2-II")){
+            Log.v("BT","DeviceDisplay待寫");
+            Device_BT_2_II();
+        }
 
 
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
@@ -83,30 +83,49 @@ public class DataDisplayActivity extends Activity {
 
 
     }//onCreate
-
     private void Device_BT_2_II(){
+        Intent intent = this.getIntent();
+
 
     }
+
 
     private void Device_BT_2_TH(){
         Intent intent = this.getIntent();
         Name1 = intent.getStringExtra("PV1");
+        Name1 = "溫度補正";
         PV1 = intent.getStringExtra("PV1_Value");
+
         Name2 = intent.getStringExtra("PV2");
+        Name2 = "濕度補正";
         PV2 = intent.getStringExtra("PV2_Value");
+
         Name3 = intent.getStringExtra("EH1");
+        Name3 = "溫度上限警報";
         EH1 = intent.getStringExtra("EH1_Value");
+
         Name4 = intent.getStringExtra("EH2");
+        Name4 = "溫度下限警報";
         EH2 = intent.getStringExtra("EH2_Value");
+
         Name5 = intent.getStringExtra("EL1");
+        Name5 = "濕度上限警報";
         EL1 = intent.getStringExtra("EL1_Value");
+
         Name6 = intent.getStringExtra("EL2");
+        Name6 = "濕度下限警報";
         EL2 = intent.getStringExtra("EL2_Value");
+
         Name7 = intent.getStringExtra("CR1");
+        Name7 = "溫度顏色轉換";
         CR1 = intent.getStringExtra("CR1_Value");
+
         Name8 = intent.getStringExtra("CR2");
+        Name8 = "濕度顏色轉換";
         CR2 = intent.getStringExtra("CR2_Value");
+
         Name9 = intent.getStringExtra("SPK");
+        Name9 = "警報聲";
         SPK = intent.getStringExtra("SPK_Value");
 
         final String[] nameItems={"裝置名稱",Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9};

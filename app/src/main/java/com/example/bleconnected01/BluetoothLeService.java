@@ -54,10 +54,13 @@ public class BluetoothLeService extends Service {
     private BluetoothGatt mBluetoothGatt;
     private int mConnectionState = STATE_DISCONNECTED;
     BluetoothGattCharacteristic characteristic;
-    private String PV1, PV2, EH1, EL1, EH2, EL2, CR1, CR2, SPK, SPKO;
-    private String Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9;
+    private String PV1, PV2, EH1, EL1, EH2, EL2, CR1, CR2, SPK, SPKO,IH1,IL1,IH2,IL2,DP1,DP2;
+    private String Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9,Name10,Name11,Name12,Name13;
+    private String Name14,Name15;
     private String mDeviceName;
     private String mDeviceAddress;
+
+    String record;
 
 
 
@@ -323,89 +326,120 @@ public class BluetoothLeService extends Service {
             return;
         }
         mBluetoothGatt.readCharacteristic(characteristic);
-        String record = characteristic.getStringValue(0);
+        record = characteristic.getStringValue(0);
         Log.v("BT", "readCharacteristic回傳: " + record);
+
 //        SystemClock.sleep(100);
 
+            BreakString();
 
-            if (record.contains("PV1")) {
-                Name1 = record.substring(0, 3);
-                Name1 = "溫度補正";
-                PV1 = record.substring(3, 10);
 
-            } else if (record.contains("PV2")) {
-                Name2 = record.substring(0, 3);
-                Name2 = "濕度補正";
-                PV2 = record.substring(3, 10);
 
-            } else if (record.contains("EH1")) {
-                Name3 = record.substring(0, 3);
-                Name3 = "溫度上限警報";
-                EH1 = record.substring(3, 10);
+    }
+    private void BreakString(){
 
-            } else if (record.contains("EL1")) {
-                Name4 = record.substring(0, 3);
-                Name4 = "溫度下限警報";
-                EL1 = record.substring(3, 10);
+        if (record.contains("PV1")) {
+            Name1 = record.substring(0, 3);
+            PV1 = record.substring(3, 10);
 
-            } else if (record.contains("EH2")) {
-                Name5 = record.substring(0, 3);
-                Name5 = "濕度上限警報";
-                EH2 = record.substring(3, 10);
+        } else if (record.contains("PV2")) {
+            Name2 = record.substring(0, 3);
+            PV2 = record.substring(3, 10);
 
-            } else if (record.contains("EL2")) {
-                Name6 = record.substring(0, 3);
-                Name6 = "濕度下限警報";
-                EL2 = record.substring(3, 10);
+        } else if (record.contains("EH1")) {
+            Name3 = record.substring(0, 3);
+            EH1 = record.substring(3, 10);
 
-            } else if (record.contains("CR1")) {
-                Name7 = record.substring(0, 3);
-                Name7 = "溫度顏色轉換";
-                CR1 = record.substring(3, 10);
+        } else if (record.contains("EL1")) {
+            Name4 = record.substring(0, 3);
+            EL1 = record.substring(3, 10);
 
-            } else if (record.contains("CR2")) {
-                Name8 = record.substring(0, 3);
-                Name8 = "濕度顏色轉換";
-                CR2 = record.substring(3, 10);
+        } else if (record.contains("EH2")) {
+            Name5 = record.substring(0, 3);
+            EH2 = record.substring(3, 10);
 
-            } else if (record.contains("SPK")) {
-                Name9 = record.substring(0, 3);
-                Name9 = "警報聲";
-                SPK = record.substring(4, 10);
-                if (SPK.contains("0000.0")) {
-                    SPKO = "off";
-                } else {
-                    SPKO = "on";
-                }
+        } else if (record.contains("EL2")) {
+            Name6 = record.substring(0, 3);
+            EL2 = record.substring(3, 10);
 
+        } else if (record.contains("CR1")) {
+            Name7 = record.substring(0, 3);
+            CR1 = record.substring(3, 10);
+
+        } else if (record.contains("CR2")) {
+            Name8 = record.substring(0, 3);
+            CR2 = record.substring(3, 10);
+
+        } else if (record.contains("SPK")) {
+            Name9 = record.substring(0, 3);
+            SPK = record.substring(4, 10);
+            if (SPK.contains("0000.0")) {
+                SPKO = "off";
+            } else {
+                SPKO = "on";
             }
-            if (record.contains("OVER")) {
-                Intent intent = new Intent(this, DataDisplayActivity.class);
-                intent.putExtra("PV1", Name1);
-                intent.putExtra("PV1_Value", PV1);
-                intent.putExtra("PV2", Name2);
-                intent.putExtra("PV2_Value", PV2);
-                intent.putExtra("EH1", Name3);
-                intent.putExtra("EH1_Value", EH1);
-                intent.putExtra("EH2", Name4);
-                intent.putExtra("EH2_Value", EH2);
-                intent.putExtra("EL1", Name5);
-                intent.putExtra("EL1_Value", EL1);
-                intent.putExtra("EL2", Name6);
-                intent.putExtra("EL2_Value", EL2);
-                intent.putExtra("CR1", Name7);
-                intent.putExtra("CR1_Value", CR1);
-                intent.putExtra("CR2", Name8);
-                intent.putExtra("CR2_Value", CR2);
-                intent.putExtra("SPK", Name9);
-                intent.putExtra("SPK_Value", SPKO);
-                startActivity(intent);
+        }else if(record.contains("IH1")){
+            Name10 = record.substring(0,3);
+            IH1 = record.substring(3,10);
 
-            }
+        }else if(record.contains("IL1")){
+            Name11 = record.substring(0,3);
+            IL1 = record.substring(3,10);
+
+        }else if(record.contains("IH2")){
+            Name12 = record.substring(0,3);
+            IH2 = record.substring(3,10);
+
+        }else if(record.contains("IL2")){
+            Name13 = record.substring(0,3);
+            IL2 = record.substring(3,10);
+
+        }else if(record.contains("DP1")){
+            Name14 = record.substring(0,3);
+            DP1 = record.substring(3,10);
+
+        }else if(record.contains("DP2")){
+            Name15 = record.substring(0,3);
+            DP2 = record.substring(3,10);
+
+        }
 
 
+        if (record.contains("OVER")) {
+            Intent intent = new Intent(this, DataDisplayActivity.class);
+            intent.putExtra("PV1", Name1);
+            intent.putExtra("PV1_Value", PV1);
+            intent.putExtra("PV2", Name2);
+            intent.putExtra("PV2_Value", PV2);
+            intent.putExtra("EH1", Name3);
+            intent.putExtra("EH1_Value", EH1);
+            intent.putExtra("EH2", Name4);
+            intent.putExtra("EH2_Value", EH2);
+            intent.putExtra("EL1", Name5);
+            intent.putExtra("EL1_Value", EL1);
+            intent.putExtra("EL2", Name6);
+            intent.putExtra("EL2_Value", EL2);
+            intent.putExtra("CR1", Name7);
+            intent.putExtra("CR1_Value", CR1);
+            intent.putExtra("CR2", Name8);
+            intent.putExtra("CR2_Value", CR2);
+            intent.putExtra("SPK", Name9);
+            intent.putExtra("SPK_Value", SPKO);
+            intent.putExtra("IH1", Name10);
+            intent.putExtra("IH1_Value", IH1);
+            intent.putExtra("IL1", Name11);
+            intent.putExtra("IL1_Value", IL1);
+            intent.putExtra("IH2", Name12);
+            intent.putExtra("IH2_Value", IH2);
+            intent.putExtra("IL2", Name13);
+            intent.putExtra("IL2_Value", IL2);
+            intent.putExtra("DP1", Name14);
+            intent.putExtra("DP1_Value", DP1);
+            intent.putExtra("DP2", Name15);
+            intent.putExtra("DP2_Value", DP2);
+            startActivity(intent);
 
-
+        }
 
     }
 
@@ -424,7 +458,8 @@ public class BluetoothLeService extends Service {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
         }
-        Log.v("BT","開始寫入或讀取程序(setCharacteristicNotification)");
+
+        Log.v("BT","開始寫入或讀取程序(setCharacteristicNotification),現在的讀取裝置為: ");
         UUID ServiceUUID = UUID.fromString(Service_uuid);
         UUID TXUUID = UUID.fromString(Characteristic_uuid_TX);
         if (!mBluetoothGatt.equals(null)) {
@@ -450,6 +485,7 @@ public class BluetoothLeService extends Service {
                     }
                     mBluetoothGatt.writeDescriptor(descriptor);
                     mBluetoothGatt.setCharacteristicNotification(characteristic, true);
+
                 }
             }
         }//All if
