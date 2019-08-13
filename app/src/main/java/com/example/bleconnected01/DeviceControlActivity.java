@@ -145,7 +145,11 @@ public class DeviceControlActivity extends Activity {
             View v = getLayoutInflater().inflate(R.layout.alertdialog_use, null);
             final EditText edInput = (EditText) v.findViewById(R.id.editText1);
             final Switch swInput = (Switch) v.findViewById(R.id.theSwitch);
+            final Switch swInputDP1 = (Switch) v.findViewById(R.id.theSwitchDP1);
+            final Switch swInputDP2 = (Switch) v.findViewById(R.id.theSwitchDP2);
             swInput.setVisibility(View.GONE);
+            swInputDP1.setVisibility(View.GONE);
+            swInputDP2.setVisibility(View.GONE);
             mBuidler.setTitle("請輸入裝置密碼:");
             mBuidler.setPositiveButton("確定", new DialogInterface.OnClickListener() {
                 @Override
