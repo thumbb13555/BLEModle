@@ -13,10 +13,17 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.drm.DrmStore;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -51,6 +58,8 @@ public class DataDisplayActivity extends Activity {
             Name11,Name12,Name13,Name14,Name15;
     public static String FromDataDisplaySendValue;
     ListView SimpleListView;
+    private DrawerLayout drawerLayout;
+
 
     private BluetoothLeService mBluetoothLeService;
     private BluetoothGattCharacteristic mNotifyCharacteristic;
@@ -67,6 +76,11 @@ public class DataDisplayActivity extends Activity {
         DeviceControlActivity.closefromDD.finish();
         DeviceName = DeviceScanActivity.Devicename;
         DeviceAddress = DeviceScanActivity.DeviceAddress;
+        drawerLayout = findViewById(R.id.drawerLayout);
+        Button btnCloseMenu = (Button) findViewById(R.id.Go_saveData);
+        btnCloseMenu.setOnClickListener(SaveDataToSQLite);
+
+
 
         /**決定往哪裡跑！！！！！！！！！！！！！！！！！*/
         if(DeviceControlActivity.DeviceType.contains("BT-2-TH"))
@@ -80,9 +94,29 @@ public class DataDisplayActivity extends Activity {
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
         getActionBar().setTitle(DeviceScanActivity.Devicename);
-
+        getActionBar().setDisplayHomeAsUpEnabled(true);
+        getActionBar().setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
 
     }//onCreate
+
+    private View.OnClickListener SaveDataToSQLite = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            drawerLayout.closeDrawers();
+            
+        }
+    };
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if((keyCode == KeyEvent.KEYCODE_BACK)){
+            drawerLayout.closeDrawers();
+            return true;
+        }
+
+        return super.onKeyDown(keyCode,event);
+    }
+
     private void Device_BT_2_II(){
         Intent intent = this.getIntent();
         Name10  = intent.getStringExtra("IH1");
@@ -2673,10 +2707,14 @@ public class DataDisplayActivity extends Activity {
                 View v = getLayoutInflater().inflate(R.layout.alertdialog_use, null);
                 final EditText edInput = (EditText) v.findViewById(R.id.editText1);
                 final Switch swInput = (Switch) v.findViewById(R.id.theSwitch);
+                final Switch swInputDP1 = (Switch) v.findViewById(R.id.theSwitchDP1);
+                final Switch swInputDP2 = (Switch) v.findViewById(R.id.theSwitchDP2);
 
                 switch (GetName) {
                     case "溫度補正":
                         swInput.setVisibility(View.GONE);
+                        swInputDP1.setVisibility(View.GONE);
+                        swInputDP2.setVisibility(View.GONE);
                         mBuilder.setTitle(GetName);
                         mBuilder.setPositiveButton("確定", new DialogInterface.OnClickListener() {
                             @Override
@@ -2734,6 +2772,8 @@ public class DataDisplayActivity extends Activity {
                         break;
                     case "濕度補正":
                         swInput.setVisibility(View.GONE);
+                        swInputDP1.setVisibility(View.GONE);
+                        swInputDP2.setVisibility(View.GONE);
                         mBuilder.setTitle(GetName);
                         mBuilder.setPositiveButton("確定", new DialogInterface.OnClickListener() {
                             @Override
@@ -2791,6 +2831,8 @@ public class DataDisplayActivity extends Activity {
                         break;
                     case "溫度上限警報":
                         swInput.setVisibility(View.GONE);
+                        swInputDP1.setVisibility(View.GONE);
+                        swInputDP2.setVisibility(View.GONE);
                         mBuilder.setTitle(GetName);
                         mBuilder.setPositiveButton("確定", new DialogInterface.OnClickListener() {
                             @Override
@@ -2869,6 +2911,8 @@ public class DataDisplayActivity extends Activity {
                         break;
                     case "溫度下限警報":
                         swInput.setVisibility(View.GONE);
+                        swInputDP1.setVisibility(View.GONE);
+                        swInputDP2.setVisibility(View.GONE);
                         mBuilder.setTitle(GetName);
                         mBuilder.setPositiveButton("確定", new DialogInterface.OnClickListener() {
                             @Override
@@ -2948,6 +2992,8 @@ public class DataDisplayActivity extends Activity {
                         break;
                     case "濕度上限警報":
                         swInput.setVisibility(View.GONE);
+                        swInputDP1.setVisibility(View.GONE);
+                        swInputDP2.setVisibility(View.GONE);
                         mBuilder.setTitle(GetName);
                         mBuilder.setPositiveButton("確定", new DialogInterface.OnClickListener() {
                             @Override
@@ -3012,6 +3058,8 @@ public class DataDisplayActivity extends Activity {
                         break;
                     case "濕度下限警報":
                         swInput.setVisibility(View.GONE);
+                        swInputDP1.setVisibility(View.GONE);
+                        swInputDP2.setVisibility(View.GONE);
                         mBuilder.setTitle(GetName);
                         mBuilder.setPositiveButton("確定", new DialogInterface.OnClickListener() {
                             @Override
@@ -3075,6 +3123,8 @@ public class DataDisplayActivity extends Activity {
                         break;
                     case "溫度顏色轉換":
                         swInput.setVisibility(View.GONE);
+                        swInputDP1.setVisibility(View.GONE);
+                        swInputDP2.setVisibility(View.GONE);
                         mBuilder.setTitle(GetName);
                         mBuilder.setPositiveButton("確定", new DialogInterface.OnClickListener() {
                             @Override
@@ -3153,6 +3203,8 @@ public class DataDisplayActivity extends Activity {
                         break;
                     case "濕度顏色轉換":
                         swInput.setVisibility(View.GONE);
+                        swInputDP1.setVisibility(View.GONE);
+                        swInputDP2.setVisibility(View.GONE);
                         mBuilder.setTitle(GetName);
                         mBuilder.setPositiveButton("確定", new DialogInterface.OnClickListener() {
                             @Override
@@ -3221,6 +3273,8 @@ public class DataDisplayActivity extends Activity {
                             swInput.setChecked(false);
                         }
                         edInput.setVisibility(View.GONE);
+                        swInputDP1.setVisibility(View.GONE);
+                        swInputDP2.setVisibility(View.GONE);
                         mBuilder.setTitle(GetName);
 
                         swInput.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -3304,7 +3358,7 @@ public class DataDisplayActivity extends Activity {
                 finish();
                 return true;
             case android.R.id.home:
-                onBackPressed();
+                drawerLayout.openDrawer(GravityCompat.START);
                 return true;
         }
         return super.onOptionsItemSelected(item);
