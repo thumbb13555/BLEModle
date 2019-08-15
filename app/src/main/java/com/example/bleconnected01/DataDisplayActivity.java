@@ -138,6 +138,7 @@ public class DataDisplayActivity extends Activity {
             lv_DisplayData.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    lv_DisplayData.setSelector(R.color.solid);//設置選中的背景色
 
                 }
             });

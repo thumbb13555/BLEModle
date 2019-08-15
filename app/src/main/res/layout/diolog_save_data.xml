@@ -71,7 +71,10 @@
         <ListView
             android:id="@+id/listview_SQLDisplay"
             android:layout_width="match_parent"
-            android:layout_height="250dp" />
+            android:layout_height="250dp"
+            android:listSelector="@android:color/transparent"
+            android:background="@color/white"
+            />
     </LinearLayout>
 
     <LinearLayout
