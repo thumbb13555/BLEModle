@@ -2,70 +2,58 @@ package com.example.bleconnected01;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
-import android.app.Service;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.drm.DrmStore;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.IBinder;
-import android.support.annotation.NonNull;
-import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ExpandableListView;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
-import android.widget.SimpleExpandableListAdapter;
 import android.widget.Switch;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.bleconnected01.SQL.CustomDBOpenHelper;
+import com.facebook.stetho.Stetho;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class DataDisplayActivity extends Activity {
     private final static String TAG = DataDisplayActivity.class.getSimpleName();
 
+    private static final String DB_Name = "LeCustomDB.db";
+    private  String DB_TABLE;
+    private SQLiteDatabase mCustomDb;
     private String PV1, PV2, EH1, EL1, EH2, EL2, CR1, CR2, SPK,IH1,IL1,IH2,IL2,DP1,DP2;
     private String Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9,Name10,
             Name11,Name12,Name13,Name14,Name15;
     public static String FromDataDisplaySendValue;
     ListView SimpleListView;
     private DrawerLayout drawerLayout;
-
-
+    private SimpleAdapter simpleAdapter;
     private BluetoothLeService mBluetoothLeService;
-    private BluetoothGattCharacteristic mNotifyCharacteristic;
-    public String returnData;
+//    private BluetoothGattCharacteristic mNotifyCharacteristic;
+//    public String returnData;
 
-    String DeviceName, DeviceAddress;
+    String DeviceName, DeviceAddress,getSimpleListViewItem;
     private boolean mConnected = true;
 
 
@@ -79,6 +67,13 @@ public class DataDisplayActivity extends Activity {
         drawerLayout = findViewById(R.id.drawerLayout);
         Button btnCloseMenu = (Button) findViewById(R.id.Go_saveData);
         btnCloseMenu.setOnClickListener(SaveDataToSQLite);
+        //===SQLite
+        DB_TABLE = DeviceControlActivity.GetMySQL;
+        CustomDBOpenHelper customDBOpenHelper =
+                new CustomDBOpenHelper(getBaseContext(),DB_Name,null,1);
+        mCustomDb = customDBOpenHelper.getWritableDatabase();
+        Stetho.initializeWithDefaults(this);
+
 
 
 
@@ -103,7 +98,103 @@ public class DataDisplayActivity extends Activity {
         @Override
         public void onClick(View v) {
             drawerLayout.closeDrawers();
-            
+            AlertDialog.Builder SQLBuilder = new AlertDialog.Builder(DataDisplayActivity.this);
+            View view = getLayoutInflater().inflate(R.layout.diolog_save_data,null);
+            final EditText edGetCustomName = (EditText) view.findViewById(R.id.edText);
+            final Button   btn_createData  = (Button) view.findViewById(R.id.buttonCreateData);
+            final Button   btn_closeDialog = (Button) view.findViewById(R.id.closeDia);
+            final Button   btn_DeleteData  = (Button) view.findViewById(R.id.deleteDataButton);
+            final Button   btn_modifyData  = (Button) view.findViewById(R.id.modifyButton);
+            final ListView lv_DisplayData  = (ListView) view.findViewById(R.id.listview_SQLDisplay);
+            SQLBuilder.setView(view);
+            final AlertDialog dialog = SQLBuilder.create();
+            dialog.setCanceledOnTouchOutside(false);
+            dialog.setCancelable(false);
+            dialog.show();
+            /**如果沒有資料表，就建立一個；如果有則選擇之*/
+            Cursor cursor = mCustomDb.rawQuery(
+                    "select DISTINCT tbl_name from sqlite_master where tbl_name = '" + DB_TABLE + "'", null);
+
+            if(cursor != null){
+                if(cursor.getCount() == 0)
+                    mCustomDb.execSQL("CREATE TABLE " + DB_TABLE + " (" + "_id INTEGER PRIMARY KEY," + "name TEXT," + "Description TEXT);");
+                cursor.close();
+            }
+
+
+            Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"name"},
+                    null,null,null,null,null,null);
+            final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
+            while (data.moveToNext()){
+                HashMap<String,String> hashMap = new HashMap<>();
+                hashMap.put("name",data.getString(0));
+                arrayList.add(hashMap);
+            }
+            final String[] from = {"name"};
+            int[] to = {android.R.id.text1};
+            simpleAdapter =
+                    new SimpleAdapter(getApplicationContext(),arrayList,android.R.layout.simple_list_item_1,from,to);
+            lv_DisplayData.setAdapter(simpleAdapter);
+            lv_DisplayData.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                }
+            });
+
+            btn_createData.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    if(edGetCustomName.getText().toString().length()>0){
+                        ContentValues newRow = new ContentValues();
+                        newRow.put("name",edGetCustomName.getText().toString().trim());
+                        newRow.put("Description","暫時沒有東西");
+                        mCustomDb.insert(DB_TABLE,null,newRow);
+                        Toast.makeText(getBaseContext(),"新增成功!",Toast.LENGTH_LONG).show();
+                        edGetCustomName.setText("");
+
+                        Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"name"},
+                                null,null,null,null,null,null);
+                        final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
+                        while (data.moveToNext()){
+                            HashMap<String,String> hashMap = new HashMap<>();
+                            hashMap.put("name",data.getString(0));
+                            arrayList.add(hashMap);
+                        }
+                        String[] from = {"name"};
+                        int[] to = {android.R.id.text1};
+                        simpleAdapter =
+                                new SimpleAdapter(getApplicationContext(),arrayList,android.R.layout.simple_list_item_1,from,to);
+                        lv_DisplayData.setAdapter(simpleAdapter);
+                    }else{
+                        Toast.makeText(getBaseContext(),"請取個喜歡的名字吧",Toast.LENGTH_LONG).show();
+                    }
+                }
+            });//btn_create
+            btn_modifyData.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                }
+            });//modify
+            btn_DeleteData.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                }
+            });//DeleteData
+
+            btn_closeDialog.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });//closeDialog
+
+
+
+
         }
     };
 
@@ -205,7 +296,7 @@ public class DataDisplayActivity extends Activity {
         }
         String[] from = {"name","values"};
         int[] to = {R.id.TitleName,R.id.ResultValue};
-        final SimpleAdapter simpleAdapter =
+        simpleAdapter =
                 new SimpleAdapter(this,arrayList,R.layout.style_listview,from,to);
         SimpleListView.setAdapter(simpleAdapter);
 
@@ -2695,7 +2786,7 @@ public class DataDisplayActivity extends Activity {
         }
         String[] from = {"name","values"};
         int[] to = {R.id.TitleName,R.id.ResultValue};
-        final SimpleAdapter simpleAdapter =
+        simpleAdapter =
                 new SimpleAdapter(this,arrayList,R.layout.style_listview,from,to);
         SimpleListView.setAdapter(simpleAdapter);
 
@@ -2712,6 +2803,7 @@ public class DataDisplayActivity extends Activity {
 
                 switch (GetName) {
                     case "溫度補正":
+
                         swInput.setVisibility(View.GONE);
                         swInputDP1.setVisibility(View.GONE);
                         swInputDP2.setVisibility(View.GONE);

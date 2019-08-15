@@ -68,6 +68,7 @@ public class DeviceControlActivity extends Activity {
 
     public static String Sendtype ;
     public static String DeviceType;
+    public static String GetMySQL;
     public static BluetoothGattCharacteristic theData;
     private TextView mConnectionState;
     private TextView mDataField;
@@ -131,12 +132,14 @@ public class DeviceControlActivity extends Activity {
 //            mNotifyCharacteristic = characteristic;
             Sendtype = "PASSWD";
             DeviceType="BT-2-TH";
+            GetMySQL = "BT2TH";
             mBluetoothLeService.setCharacteristicNotification(mNotifyCharacteristic, true);
 
         }else if(data.contains("BT-2-II")){
             Log.v("BT","現在的模式為BT-2-II");
             Sendtype = "PASSWD";
             DeviceType = "BT-2-II";
+            GetMySQL = "BT2II";
             mBluetoothLeService.setCharacteristicNotification(mNotifyCharacteristic, true);
 
         }
