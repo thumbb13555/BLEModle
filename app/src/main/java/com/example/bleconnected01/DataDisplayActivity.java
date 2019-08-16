@@ -21,6 +21,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -35,12 +36,14 @@ import com.facebook.stetho.Stetho;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 
 public class DataDisplayActivity extends Activity {
     private final static String TAG = DataDisplayActivity.class.getSimpleName();
 
     private static final String DB_Name = "LeCustomDB.db";
-    private  String DB_TABLE;
+    private int GET_ITEM_POSITION = 100;
+    private String DB_TABLE,SELECT_NAME;
     private SQLiteDatabase mCustomDb;
     private String PV1, PV2, EH1, EL1, EH2, EL2, CR1, CR2, SPK,IH1,IL1,IH2,IL2,DP1,DP2;
     private String Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9,Name10,
@@ -122,23 +125,40 @@ public class DataDisplayActivity extends Activity {
             }
 
 
-            Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"name"},
+            final Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"_id","name","Description"},
                     null,null,null,null,null,null);
             final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
             while (data.moveToNext()){
                 HashMap<String,String> hashMap = new HashMap<>();
-                hashMap.put("name",data.getString(0));
+                hashMap.put("name",data.getString(1));
+                hashMap.put("id",data.getString(0));
                 arrayList.add(hashMap);
             }
-            final String[] from = {"name"};
+
+            final String[] from = {"name","id"};
             int[] to = {android.R.id.text1};
             simpleAdapter =
                     new SimpleAdapter(getApplicationContext(),arrayList,android.R.layout.simple_list_item_1,from,to);
             lv_DisplayData.setAdapter(simpleAdapter);
+
             lv_DisplayData.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     lv_DisplayData.setSelector(R.color.solid);//設置選中的背景色
+                    final Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"_id","name","Description"},
+                            null,null,null,null,null,null);
+                    final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
+                    while (data.moveToNext()){
+                        HashMap<String,String> hashMap = new HashMap<>();
+                        hashMap.put("name",data.getString(1));
+                        hashMap.put("id",data.getString(0));
+                        arrayList.add(hashMap);
+                    }
+                    String Selected = arrayList.get(position).toString();
+                    String str = Selected.substring(Selected.indexOf(", id="),Selected.indexOf("}"));
+                    String strGet = str.substring(5);
+                    GET_ITEM_POSITION = Integer.parseInt(strGet);
+
 
                 }
             });
@@ -155,15 +175,16 @@ public class DataDisplayActivity extends Activity {
                         Toast.makeText(getBaseContext(),"新增成功!",Toast.LENGTH_LONG).show();
                         edGetCustomName.setText("");
 
-                        Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"name"},
+                        final Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"_id","name","Description"},
                                 null,null,null,null,null,null);
                         final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
                         while (data.moveToNext()){
                             HashMap<String,String> hashMap = new HashMap<>();
-                            hashMap.put("name",data.getString(0));
+                            hashMap.put("name",data.getString(1));
+                            hashMap.put("id",data.getString(0));
                             arrayList.add(hashMap);
                         }
-                        String[] from = {"name"};
+                        final String[] from = {"name","id"};
                         int[] to = {android.R.id.text1};
                         simpleAdapter =
                                 new SimpleAdapter(getApplicationContext(),arrayList,android.R.layout.simple_list_item_1,from,to);
@@ -177,11 +198,29 @@ public class DataDisplayActivity extends Activity {
                 @Override
                 public void onClick(View v) {
 
+
                 }
             });//modify
             btn_DeleteData.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+
+                        Log.v("BT","得到的值: "+GET_ITEM_POSITION);
+                        mCustomDb.delete(DB_TABLE,"_id="+GET_ITEM_POSITION,null);
+                        Toast.makeText(getBaseContext(),"刪除成功!",Toast.LENGTH_LONG).show();
+                        Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"name"},
+                                null,null,null,null,null,null);
+                        final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
+                        while (data.moveToNext()){
+                            HashMap<String,String> hashMap = new HashMap<>();
+                            hashMap.put("name",data.getString(0));
+                            arrayList.add(hashMap);
+                        }
+                        String[] from = {"name"};
+                        int[] to = {android.R.id.text1};
+                        simpleAdapter =
+                                new SimpleAdapter(getApplicationContext(),arrayList,android.R.layout.simple_list_item_1,from,to);
+                        lv_DisplayData.setAdapter(simpleAdapter);
 
                 }
             });//DeleteData
