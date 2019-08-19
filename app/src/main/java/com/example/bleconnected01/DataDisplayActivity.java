@@ -13,6 +13,7 @@ import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.os.Bundle;
@@ -46,15 +47,12 @@ public class DataDisplayActivity extends Activity {
 
     private static final String DB_Name = "LeCustomDB.db";
     private int GET_ITEM_POSITION = 100;
-    private String DB_TABLE, SELECT_NAME, getName;
+    private String DB_TABLE;
     private SQLiteDatabase mCustomDb;
     private String PV1, PV2, EH1, EL1, EH2, EL2, CR1, CR2, SPK, IH1, IL1, IH2, IL2, DP1, DP2;
     private String Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9, Name10,
             Name11, Name12, Name13, Name14, Name15;
 
-    private String PV1G, PV2G, EH1G, EL1G, EH2G, EL2G, CR1G, CR2G, SPKG, IH1G, IL1G, IH2G, IL2G, DP1G, DP2G;
-    private String Name1G, Name2G, Name3G, Name4G, Name5G, Name6G, Name7G, Name8G, Name9G, Name10G,
-            Name11G, Name12G, Name13G, Name14G, Name15G;
     public static String FromDataDisplaySendValue;
     private JSONArray jsonArray;
     ListView SimpleListView;
@@ -163,6 +161,7 @@ public class DataDisplayActivity extends Activity {
                 public void onClick(View v) {
 
                     if (GET_ITEM_POSITION != 100) {
+                        Toast.makeText(getBaseContext(),"會Lag一下，請稍候喔",Toast.LENGTH_LONG).show();
                         new AlertDialog.Builder(DataDisplayActivity.this)
                                 .setTitle("確認匯入")
                                 .setMessage("確定要將資料匯入嗎？")
@@ -176,6 +175,7 @@ public class DataDisplayActivity extends Activity {
                                         while (c.moveToNext()) {
                                             Log.v("BT", c.getString(0));
                                             str = c.getString(0);
+
                                         }
 
                                         try {
@@ -189,6 +189,50 @@ public class DataDisplayActivity extends Activity {
                                                 hashMap.put("name",id);
                                                 hashMap.put("values",value);
                                                 arrayList.add(hashMap);
+                                                if(id.contains("溫度補正")){
+                                                    FromDataDisplaySendValue = "PV1"+value;
+                                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                                    SystemClock.sleep(200);
+                                                }else if(id.contains("濕度補正")){
+                                                    FromDataDisplaySendValue = "PV2"+value;
+                                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                                    SystemClock.sleep(200);
+                                                }else if(id.contains("溫度上限警報")){
+                                                    FromDataDisplaySendValue = "EH1"+value;
+                                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                                    SystemClock.sleep(200);
+                                                }else if(id.contains("溫度下限警報")){
+                                                    FromDataDisplaySendValue = "EL1"+value;
+                                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                                    SystemClock.sleep(200);
+                                                }else if(id.contains("濕度上限警報")){
+                                                    FromDataDisplaySendValue = "EH2"+value;
+                                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                                    SystemClock.sleep(200);
+                                                }else if(id.contains("濕度下限警報")){
+                                                    FromDataDisplaySendValue = "EL2"+value;
+                                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                                    SystemClock.sleep(200);
+                                                }else if(id.contains("溫度顏色轉換")){
+                                                    FromDataDisplaySendValue = "CR1"+value;
+                                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                                    SystemClock.sleep(200);
+                                                }else if(id.contains("濕度顏色轉換")){
+                                                    FromDataDisplaySendValue = "CR2"+value;
+                                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                                    SystemClock.sleep(200);
+                                                }else if(id.contains("警報聲")){
+                                                    if (value.contains("off")){
+                                                        FromDataDisplaySendValue = "SPK+0000.0";
+                                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+
+                                                    }else{
+                                                        FromDataDisplaySendValue = "SPK+0001.0";
+                                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+
+                                                    }
+
+                                                }
 
                                                 Log.v("BT", "解析:" + id + ",\t" + value);
                                             }
@@ -202,6 +246,13 @@ public class DataDisplayActivity extends Activity {
                                                 new SimpleAdapter(getBaseContext(), arrayList, R.layout.style_listview, from, to);
                                         SimpleListView.setAdapter(simpleAdapter);
                                         SimpleListView.setOnItemClickListener(THClick);
+
+
+
+
+
+
+
                                         dialog.dismiss();
                                     }
                                 })
@@ -3756,7 +3807,7 @@ public class DataDisplayActivity extends Activity {
                                     CR2 = "+000" + Input + ".0";
                                     mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                     dialog7.dismiss();
-                                } else if (toDouble > 10 && toDouble <= 99) {
+                                } else if (toDouble >= 10 && toDouble <= 99) {
                                     HashMap<String, String> hashMap = new HashMap<>();
                                     hashMap.put("name", nameItems[position]);
                                     hashMap.put("values", "+00" + Input + ".0");
