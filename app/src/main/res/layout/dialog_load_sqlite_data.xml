@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
-
-
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -19,33 +16,12 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="儲存設定"
+            android:text="匯入資料"
             android:textColor="#884C3A"
             android:textSize="36sp" />
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
 
-        <EditText
-            android:id="@+id/edText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ems="10"
-            android:hint="資料名稱"
-            android:inputType="textPersonName" />
-
-        <Button
-            android:id="@+id/buttonCreateData"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="新增"
-            android:textSize="24sp" />
-    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -60,7 +36,7 @@
             android:gravity="center"
             android:text="資料列表"
             android:textColor="#000000"
-            android:textSize="36sp" />
+            android:textSize="28sp" />
     </LinearLayout>
 
     <LinearLayout
@@ -69,7 +45,7 @@
         android:orientation="vertical">
 
         <ListView
-            android:id="@+id/listview_SQLDisplay"
+            android:id="@+id/listview_Load"
             android:layout_width="match_parent"
             android:layout_height="250dp"
             android:listSelector="@android:color/transparent"
@@ -82,26 +58,25 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
+
         <Button
-            android:id="@+id/closeDia"
+            android:id="@+id/closeDiaL"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="關閉視窗" />
-
-        <Button
-            android:id="@+id/deleteDataButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="刪除資料" />
-
+            android:text="關閉視窗"
+            android:textSize="24dp"
+            android:layout_margin="5dp"/>
         <Button
             android:id="@+id/LoadButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="修改資料" />
+            android:text="匯入資料"
+            android:textSize="24dp"
+            android:layout_margin="5dp"
+            />
+
     </LinearLayout>
 
 </LinearLayout>
