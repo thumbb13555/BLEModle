@@ -34,6 +34,10 @@ import android.widget.Toast;
 import com.example.bleconnected01.SQL.CustomDBOpenHelper;
 import com.facebook.stetho.Stetho;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
@@ -43,12 +47,17 @@ public class DataDisplayActivity extends Activity {
 
     private static final String DB_Name = "LeCustomDB.db";
     private int GET_ITEM_POSITION = 100;
-    private String DB_TABLE,SELECT_NAME;
+    private String DB_TABLE, SELECT_NAME,getName;
     private SQLiteDatabase mCustomDb;
-    private String PV1, PV2, EH1, EL1, EH2, EL2, CR1, CR2, SPK,IH1,IL1,IH2,IL2,DP1,DP2;
-    private String Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9,Name10,
-            Name11,Name12,Name13,Name14,Name15;
+    private String PV1, PV2, EH1, EL1, EH2, EL2, CR1, CR2, SPK, IH1, IL1, IH2, IL2, DP1, DP2;
+    private String Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9, Name10,
+            Name11, Name12, Name13, Name14, Name15;
+
+    private String PV1G, PV2G, EH1G, EL1G, EH2G, EL2G, CR1G, CR2G, SPKG, IH1G, IL1G, IH2G, IL2G, DP1G, DP2G;
+    private String Name1G, Name2G, Name3G, Name4G, Name5G, Name6G, Name7G, Name8G, Name9G, Name10G,
+            Name11G, Name12G, Name13G, Name14G, Name15G;
     public static String FromDataDisplaySendValue;
+    private JSONArray jsonArray;
     ListView SimpleListView;
     private DrawerLayout drawerLayout;
     private SimpleAdapter simpleAdapter;
@@ -56,7 +65,7 @@ public class DataDisplayActivity extends Activity {
 //    private BluetoothGattCharacteristic mNotifyCharacteristic;
 //    public String returnData;
 
-    String DeviceName, DeviceAddress,getSimpleListViewItem;
+    String DeviceName, DeviceAddress, getSimpleListViewItem;
     private boolean mConnected = true;
 
 
@@ -73,18 +82,15 @@ public class DataDisplayActivity extends Activity {
         //===SQLite
         DB_TABLE = DeviceControlActivity.GetMySQL;
         CustomDBOpenHelper customDBOpenHelper =
-                new CustomDBOpenHelper(getBaseContext(),DB_Name,null,1);
+                new CustomDBOpenHelper(getBaseContext(), DB_Name, null, 1);
         mCustomDb = customDBOpenHelper.getWritableDatabase();
         Stetho.initializeWithDefaults(this);
 
 
-
-
         /**決定往哪裡跑！！！！！！！！！！！！！！！！！*/
-        if(DeviceControlActivity.DeviceType.contains("BT-2-TH"))
-        {
+        if (DeviceControlActivity.DeviceType.contains("BT-2-TH")) {
             Device_BT_2_TH();
-        }else if(DeviceControlActivity.DeviceType.contains("BT-2-II")){
+        } else if (DeviceControlActivity.DeviceType.contains("BT-2-II")) {
             Device_BT_2_II();
         }
         /**決定往哪裡跑！！！！！！！！！！！！！！！！！*/
@@ -102,60 +108,59 @@ public class DataDisplayActivity extends Activity {
         public void onClick(View v) {
             drawerLayout.closeDrawers();
             AlertDialog.Builder SQLBuilder = new AlertDialog.Builder(DataDisplayActivity.this);
-            View view = getLayoutInflater().inflate(R.layout.diolog_save_data,null);
+            View view = getLayoutInflater().inflate(R.layout.diolog_save_data, null);
             final EditText edGetCustomName = (EditText) view.findViewById(R.id.edText);
-            final Button   btn_createData  = (Button) view.findViewById(R.id.buttonCreateData);
-            final Button   btn_closeDialog = (Button) view.findViewById(R.id.closeDia);
-            final Button   btn_DeleteData  = (Button) view.findViewById(R.id.deleteDataButton);
-            final Button   btn_modifyData  = (Button) view.findViewById(R.id.modifyButton);
-            final ListView lv_DisplayData  = (ListView) view.findViewById(R.id.listview_SQLDisplay);
+            final Button btn_createData = (Button) view.findViewById(R.id.buttonCreateData);
+            final Button btn_closeDialog = (Button) view.findViewById(R.id.closeDia);
+            final Button btn_DeleteData = (Button) view.findViewById(R.id.deleteDataButton);
+            final Button btn_modifyData = (Button) view.findViewById(R.id.modifyButton);
+            final ListView lv_DisplayData = (ListView) view.findViewById(R.id.listview_SQLDisplay);
             SQLBuilder.setView(view);
             final AlertDialog dialog = SQLBuilder.create();
             dialog.setCanceledOnTouchOutside(false);
-            dialog.setCancelable(false);
             dialog.show();
             /**如果沒有資料表，就建立一個；如果有則選擇之*/
             Cursor cursor = mCustomDb.rawQuery(
                     "select DISTINCT tbl_name from sqlite_master where tbl_name = '" + DB_TABLE + "'", null);
 
-            if(cursor != null){
-                if(cursor.getCount() == 0)
+            if (cursor != null) {
+                if (cursor.getCount() == 0)
                     mCustomDb.execSQL("CREATE TABLE " + DB_TABLE + " (" + "_id INTEGER PRIMARY KEY," + "name TEXT," + "Description TEXT);");
                 cursor.close();
             }
 
 
-            final Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"_id","name","Description"},
-                    null,null,null,null,null,null);
+            final Cursor data = mCustomDb.query(true, DB_TABLE, new String[]{"_id", "name", "Description"},
+                    null, null, null, null, null, null);
             final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
-            while (data.moveToNext()){
-                HashMap<String,String> hashMap = new HashMap<>();
-                hashMap.put("name",data.getString(1));
-                hashMap.put("id",data.getString(0));
+            while (data.moveToNext()) {
+                HashMap<String, String> hashMap = new HashMap<>();
+                hashMap.put("name", data.getString(1));
+                hashMap.put("id", data.getString(0));
                 arrayList.add(hashMap);
             }
 
-            final String[] from = {"name","id"};
+            final String[] from = {"name", "id"};
             int[] to = {android.R.id.text1};
             simpleAdapter =
-                    new SimpleAdapter(getApplicationContext(),arrayList,android.R.layout.simple_list_item_1,from,to);
+                    new SimpleAdapter(getApplicationContext(), arrayList, android.R.layout.simple_list_item_1, from, to);
             lv_DisplayData.setAdapter(simpleAdapter);
 
             lv_DisplayData.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     lv_DisplayData.setSelector(R.color.solid);//設置選中的背景色
-                    final Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"_id","name","Description"},
-                            null,null,null,null,null,null);
+                    final Cursor data = mCustomDb.query(true, DB_TABLE, new String[]{"_id", "name", "Description"},
+                            null, null, null, null, null, null);
                     final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
-                    while (data.moveToNext()){
-                        HashMap<String,String> hashMap = new HashMap<>();
-                        hashMap.put("name",data.getString(1));
-                        hashMap.put("id",data.getString(0));
+                    while (data.moveToNext()) {
+                        HashMap<String, String> hashMap = new HashMap<>();
+                        hashMap.put("name", data.getString(1));
+                        hashMap.put("id", data.getString(0));
                         arrayList.add(hashMap);
                     }
                     String Selected = arrayList.get(position).toString();
-                    String str = Selected.substring(Selected.indexOf(", id="),Selected.indexOf("}"));
+                    String str = Selected.substring(Selected.indexOf(", id="), Selected.indexOf("}"));
                     String strGet = str.substring(5);
                     GET_ITEM_POSITION = Integer.parseInt(strGet);
 
@@ -167,30 +172,92 @@ public class DataDisplayActivity extends Activity {
                 @Override
                 public void onClick(View v) {
 
-                    if(edGetCustomName.getText().toString().length()>0){
+                    if (edGetCustomName.getText().toString().length() > 0) {
+
+                        try {
+                            JSONObject json_MySet = new JSONObject();
+                            json_MySet.put("id",Name1);
+                            json_MySet.put("value",PV1);
+
+                            JSONObject json_MySet1 = new JSONObject();
+                            json_MySet1.put("id",Name2);
+                            json_MySet1.put("value",PV2);
+
+                            JSONObject json_MySet2 = new JSONObject();
+                            json_MySet2.put("id",Name3);
+                            json_MySet2.put("value",EH1);
+
+                            JSONObject json_MySet3 = new JSONObject();
+                            json_MySet3.put("id",Name4);
+                            json_MySet3.put("value",EL1);
+
+                            JSONObject json_MySet4 = new JSONObject();
+                            json_MySet4.put("id",Name5);
+                            json_MySet4.put("value",EH2);
+
+                            JSONObject json_MySet5 = new JSONObject();
+                            json_MySet5.put("id",Name6);
+                            json_MySet5.put("value",EL2);
+
+                            JSONObject json_MySet6 = new JSONObject();
+                            json_MySet6.put("id",Name7);
+                            json_MySet6.put("value",CR1);
+
+                            JSONObject json_MySet7 = new JSONObject();
+                            json_MySet7.put("id",Name8);
+                            json_MySet7.put("value",CR2);
+
+                            JSONObject json_MySet8 = new JSONObject();
+                            json_MySet8.put("id",Name9);
+                            json_MySet8.put("value",SPK);
+
+
+
+
+                            jsonArray = new JSONArray();
+                            jsonArray.put(0,json_MySet);
+                            jsonArray.put(1,json_MySet1);
+                            jsonArray.put(2,json_MySet2);
+                            jsonArray.put(3,json_MySet3);
+                            jsonArray.put(4,json_MySet4);
+                            jsonArray.put(5,json_MySet5);
+                            jsonArray.put(6,json_MySet6);
+                            jsonArray.put(7,json_MySet7);
+                            jsonArray.put(8,json_MySet8);
+
+
+
+
+                            Log.v("BT","JSON: "+jsonArray);
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+
                         ContentValues newRow = new ContentValues();
-                        newRow.put("name",edGetCustomName.getText().toString().trim());
-                        newRow.put("Description","暫時沒有東西");
-                        mCustomDb.insert(DB_TABLE,null,newRow);
-                        Toast.makeText(getBaseContext(),"新增成功!",Toast.LENGTH_LONG).show();
+                        newRow.put("name", edGetCustomName.getText().toString().trim());
+                        newRow.put("Description", String.valueOf(jsonArray));
+                        mCustomDb.insert(DB_TABLE, null, newRow);
+                        Toast.makeText(getBaseContext(), "新增成功!", Toast.LENGTH_SHORT).show();
                         edGetCustomName.setText("");
 
-                        final Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"_id","name","Description"},
-                                null,null,null,null,null,null);
+                        final Cursor data = mCustomDb.query(true, DB_TABLE, new String[]{"_id", "name", "Description"},
+                                null, null, null, null, null, null);
                         final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
-                        while (data.moveToNext()){
-                            HashMap<String,String> hashMap = new HashMap<>();
-                            hashMap.put("name",data.getString(1));
-                            hashMap.put("id",data.getString(0));
+                        while (data.moveToNext()) {
+                            HashMap<String, String> hashMap = new HashMap<>();
+                            hashMap.put("name", data.getString(1));
+                            hashMap.put("id", data.getString(0));
                             arrayList.add(hashMap);
                         }
-                        final String[] from = {"name","id"};
+                        final String[] from = {"name", "id"};
                         int[] to = {android.R.id.text1};
                         simpleAdapter =
-                                new SimpleAdapter(getApplicationContext(),arrayList,android.R.layout.simple_list_item_1,from,to);
+                                new SimpleAdapter(getApplicationContext(), arrayList, android.R.layout.simple_list_item_1, from, to);
                         lv_DisplayData.setAdapter(simpleAdapter);
-                    }else{
-                        Toast.makeText(getBaseContext(),"請取個喜歡的名字吧",Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(getBaseContext(), "請取個喜歡的名字吧", Toast.LENGTH_LONG).show();
                     }
                 }
             });//btn_create
@@ -198,29 +265,95 @@ public class DataDisplayActivity extends Activity {
                 @Override
                 public void onClick(View v) {
 
+                    if (GET_ITEM_POSITION == 100) {
+                        Toast.makeText(getBaseContext(), "請選擇欲修改之物件", Toast.LENGTH_SHORT).show();
+                    } else {
+                        final AlertDialog.Builder modifyDialog = new AlertDialog.Builder(DataDisplayActivity.this);
+                        View view1 = getLayoutInflater().inflate(R.layout.dialog_input_modift_function, null);
+                        final EditText edtModify = (EditText) view1.findViewById(R.id.editTextINput);
 
+
+                        modifyDialog.setView(view1);
+                        modifyDialog.setTitle("請輸入修改的值");
+                        final Cursor c = mCustomDb.rawQuery("SELECT *  FROM " + DB_TABLE+ " WHERE _id="+GET_ITEM_POSITION  , null);
+                        while (c.moveToNext()){
+                            edtModify.setText(c.getString(1));
+                        }
+
+                        modifyDialog.setPositiveButton("修改", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                            }
+                        });
+                        modifyDialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                            }
+                        });
+                        final AlertDialog dialog = modifyDialog.create();
+                        dialog.show();
+                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+
+                                if (edtModify.getText().toString().length()>0) {
+                                    ContentValues values = new ContentValues();
+                                    values.put("name",edtModify.getText().toString().trim());
+                                    mCustomDb.update(DB_TABLE,values,"_id="+GET_ITEM_POSITION,null);
+                                    //UPDATE BT2TH SET  WHERE
+                                    //UPDATE "表格" SET "欄位1" = [值1], "欄位2" = [值2]WHERE "條件";
+                                    final Cursor data = mCustomDb.query(true, DB_TABLE, new String[]{"_id", "name", "Description"},
+                                            null, null, null, null, null, null);
+                                    final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
+                                    while (data.moveToNext()) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", data.getString(1));
+                                        hashMap.put("id", data.getString(0));
+                                        arrayList.add(hashMap);
+                                    }
+                                    final String[] from = {"name", "id"};
+                                    int[] to = {android.R.id.text1};
+                                    simpleAdapter =
+                                            new SimpleAdapter(getApplicationContext(), arrayList, android.R.layout.simple_list_item_1, from, to);
+                                    lv_DisplayData.setAdapter(simpleAdapter);
+                                    GET_ITEM_POSITION = 100;
+                                    dialog.dismiss();
+
+
+                                }else{
+                                    Toast.makeText(getBaseContext(),"此處不可為空",Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                    }//判斷是否選擇
                 }
             });//modify
             btn_DeleteData.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
 
-                        Log.v("BT","得到的值: "+GET_ITEM_POSITION);
-                        mCustomDb.delete(DB_TABLE,"_id="+GET_ITEM_POSITION,null);
-                        Toast.makeText(getBaseContext(),"刪除成功!",Toast.LENGTH_LONG).show();
-                        Cursor data = mCustomDb.query(true,DB_TABLE,new String[]{"name"},
-                                null,null,null,null,null,null);
+                    if (GET_ITEM_POSITION == 100) {
+                        Toast.makeText(getBaseContext(), "請選擇欲刪除之物件", Toast.LENGTH_LONG).show();
+                    } else {
+                        Log.v("BT", "得到的值: " + GET_ITEM_POSITION);
+                        mCustomDb.delete(DB_TABLE, "_id=" + GET_ITEM_POSITION, null);
+                        Toast.makeText(getBaseContext(), "刪除成功!", Toast.LENGTH_SHORT).show();
+                        Cursor data = mCustomDb.query(true, DB_TABLE, new String[]{"name"},
+                                null, null, null, null, null, null);
                         final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
-                        while (data.moveToNext()){
-                            HashMap<String,String> hashMap = new HashMap<>();
-                            hashMap.put("name",data.getString(0));
+                        while (data.moveToNext()) {
+                            HashMap<String, String> hashMap = new HashMap<>();
+                            hashMap.put("name", data.getString(0));
                             arrayList.add(hashMap);
                         }
                         String[] from = {"name"};
                         int[] to = {android.R.id.text1};
                         simpleAdapter =
-                                new SimpleAdapter(getApplicationContext(),arrayList,android.R.layout.simple_list_item_1,from,to);
+                                new SimpleAdapter(getApplicationContext(), arrayList, android.R.layout.simple_list_item_1, from, to);
                         lv_DisplayData.setAdapter(simpleAdapter);
+                        GET_ITEM_POSITION = 100;
+                    }
+
 
                 }
             });//DeleteData
@@ -228,11 +361,10 @@ public class DataDisplayActivity extends Activity {
             btn_closeDialog.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    GET_ITEM_POSITION = 100;
                     dialog.dismiss();
                 }
             });//closeDialog
-
-
 
 
         }
@@ -240,104 +372,104 @@ public class DataDisplayActivity extends Activity {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if((keyCode == KeyEvent.KEYCODE_BACK)){
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {
             drawerLayout.closeDrawers();
             return true;
         }
 
-        return super.onKeyDown(keyCode,event);
+        return super.onKeyDown(keyCode, event);
     }
 
-    private void Device_BT_2_II(){
+    private void Device_BT_2_II() {
         Intent intent = this.getIntent();
-        Name10  = intent.getStringExtra("IH1");
-        Name10  = "第一排最大量程";
-        IH1     = intent.getStringExtra("IH1_Value");
+        Name10 = intent.getStringExtra("IH1");
+        Name10 = "第一排最大量程";
+        IH1 = intent.getStringExtra("IH1_Value");
 
-        Name11  = intent.getStringExtra("IL1");
-        Name11  = "第一排最小量程";
-        IL1     = intent.getStringExtra("IL1_Value");
+        Name11 = intent.getStringExtra("IL1");
+        Name11 = "第一排最小量程";
+        IL1 = intent.getStringExtra("IL1_Value");
 
-        Name12  = intent.getStringExtra("IH2");
-        Name12  = "第二排最大量程";
-        IH2     = intent.getStringExtra("IH2_Value");
+        Name12 = intent.getStringExtra("IH2");
+        Name12 = "第二排最大量程";
+        IH2 = intent.getStringExtra("IH2_Value");
 
-        Name13  = intent.getStringExtra("IL2");
-        Name13  = "第二排最小量程";
-        IL2     = intent.getStringExtra("IL2_Value");
+        Name13 = intent.getStringExtra("IL2");
+        Name13 = "第二排最小量程";
+        IL2 = intent.getStringExtra("IL2_Value");
 
-        Name1   = intent.getStringExtra("PV1");
-        Name1   = "第一排補正";
-        PV1     = intent.getStringExtra("PV1_Value");
+        Name1 = intent.getStringExtra("PV1");
+        Name1 = "第一排補正";
+        PV1 = intent.getStringExtra("PV1_Value");
 
-        Name2   = intent.getStringExtra("PV2");
-        Name2   = "第二排補正";
-        PV2     = intent.getStringExtra("PV2_Value");
+        Name2 = intent.getStringExtra("PV2");
+        Name2 = "第二排補正";
+        PV2 = intent.getStringExtra("PV2_Value");
 
-        Name3   = intent.getStringExtra("EH1");
-        Name3   = "第一排上限警報";
-        EH1     = intent.getStringExtra("EH1_Value");
+        Name3 = intent.getStringExtra("EH1");
+        Name3 = "第一排上限警報";
+        EH1 = intent.getStringExtra("EH1_Value");
 
-        Name5   = intent.getStringExtra("EL1");
-        Name5   = "第一排下限警報";
-        EL1     = intent.getStringExtra("EL1_Value");
+        Name5 = intent.getStringExtra("EL1");
+        Name5 = "第一排下限警報";
+        EL1 = intent.getStringExtra("EL1_Value");
 
-        Name4   = intent.getStringExtra("EH2");
-        Name4   = "第二排上限警報";
-        EH2     = intent.getStringExtra("EH2_Value");
+        Name4 = intent.getStringExtra("EH2");
+        Name4 = "第二排上限警報";
+        EH2 = intent.getStringExtra("EH2_Value");
 
-        Name6   = intent.getStringExtra("EL2");
-        Name6   = "第二排下限警報";
-        EL2     = intent.getStringExtra("EL2_Value");
+        Name6 = intent.getStringExtra("EL2");
+        Name6 = "第二排下限警報";
+        EL2 = intent.getStringExtra("EL2_Value");
 
-        Name7   = intent.getStringExtra("CR1");
-        Name7   = "第一排顏色轉換";
-        CR1     = intent.getStringExtra("CR1_Value");
+        Name7 = intent.getStringExtra("CR1");
+        Name7 = "第一排顏色轉換";
+        CR1 = intent.getStringExtra("CR1_Value");
 
-        Name8   = intent.getStringExtra("CR2");
-        Name8   = "第二排顏色轉換";
-        CR2     = intent.getStringExtra("CR2_Value");
+        Name8 = intent.getStringExtra("CR2");
+        Name8 = "第二排顏色轉換";
+        CR2 = intent.getStringExtra("CR2_Value");
 
-        Name9   = intent.getStringExtra("SPK");
-        Name9   = "警報聲";
-        SPK     = intent.getStringExtra("SPK_Value");
+        Name9 = intent.getStringExtra("SPK");
+        Name9 = "警報聲";
+        SPK = intent.getStringExtra("SPK_Value");
 
-        Name14  = intent.getStringExtra("DP1");
-        Name14  = "第一排小數點";
-        DP1     = intent.getStringExtra("DP1_Value");
-        if (DP1.contains("0000.0")){
+        Name14 = intent.getStringExtra("DP1");
+        Name14 = "第一排小數點";
+        DP1 = intent.getStringExtra("DP1_Value");
+        if (DP1.contains("0000.0")) {
             DP1 = "off";
-        }else {
+        } else {
             DP1 = "on";
         }
 
-        Name15  = intent.getStringExtra("DP2");
-        Name15  = "第二排小數點";
-        DP2     = intent.getStringExtra("DP2_Value");
-        if (DP2.contains("0000.0")){
+        Name15 = intent.getStringExtra("DP2");
+        Name15 = "第二排小數點";
+        DP2 = intent.getStringExtra("DP2_Value");
+        if (DP2.contains("0000.0")) {
             DP2 = "off";
-        }else {
+        } else {
             DP2 = "on";
         }
 
-        final String[] nameItems   =  {"裝置名稱",Name10,Name11,Name12,Name13,Name1,Name2,Name3,Name5,Name4
-                                        ,Name6,Name7,Name8,Name9,Name14,Name15};
-        final String[] valuesItems =  {DeviceName,IH1,IL1,IH2,IL2,PV1,PV2,EH1,EH2,EL1,EL2,CR1,CR2,SPK
-                                        ,DP1,DP2};
+        final String[] nameItems = {"裝置名稱", Name10, Name11, Name12, Name13, Name1, Name2, Name3, Name5, Name4
+                , Name6, Name7, Name8, Name9, Name14, Name15};
+        final String[] valuesItems = {DeviceName, IH1, IL1, IH2, IL2, PV1, PV2, EH1, EH2, EL1, EL2, CR1, CR2, SPK
+                , DP1, DP2};
 
         SimpleListView = findViewById(R.id.listView);
 
         final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
-        for(int i = 0;i<nameItems.length; i++){
-            HashMap<String,String> hashMap = new HashMap<>();
-            hashMap.put("name",nameItems[i]);
-            hashMap.put("values",valuesItems[i]);
+        for (int i = 0; i < nameItems.length; i++) {
+            HashMap<String, String> hashMap = new HashMap<>();
+            hashMap.put("name", nameItems[i]);
+            hashMap.put("values", valuesItems[i]);
             arrayList.add(hashMap);
         }
-        String[] from = {"name","values"};
-        int[] to = {R.id.TitleName,R.id.ResultValue};
+        String[] from = {"name", "values"};
+        int[] to = {R.id.TitleName, R.id.ResultValue};
         simpleAdapter =
-                new SimpleAdapter(this,arrayList,R.layout.style_listview,from,to);
+                new SimpleAdapter(this, arrayList, R.layout.style_listview, from, to);
         SimpleListView.setAdapter(simpleAdapter);
 
 
@@ -352,34 +484,34 @@ public class DataDisplayActivity extends Activity {
                 final Switch swInputDP1 = (Switch) v.findViewById(R.id.theSwitchDP1);
                 final Switch swInputDP2 = (Switch) v.findViewById(R.id.theSwitchDP2);
 
-            if (DP1.contains("on")) {
-                if (GetName.contains("第一")&&GetName.contains("補正")) {
-                    edInput.setHint("-99.9~99.9");
-                } else if (GetName.contains("第一排")){
-                    edInput.setHint("-199.9~999.9");
-                }
-            }else{
-                if (GetName.contains("第一")&&GetName.contains("補正")) {
-                    edInput.setHint("-999~999");
-                } else if (GetName.contains("第一排")){
-                    edInput.setHint("-999~9999" );
-                }
-            }
-                if (DP2.contains("on")) {
-                    if (GetName.contains("第二")&&GetName.contains("補正")) {
+                if (DP1.contains("on")) {
+                    if (GetName.contains("第一") && GetName.contains("補正")) {
                         edInput.setHint("-99.9~99.9");
-                    } else if (GetName.contains("第二排")){
+                    } else if (GetName.contains("第一排")) {
                         edInput.setHint("-199.9~999.9");
                     }
-                }else{
-                    if (GetName.contains("第二")&&GetName.contains("補正")) {
+                } else {
+                    if (GetName.contains("第一") && GetName.contains("補正")) {
                         edInput.setHint("-999~999");
-                    } else if (GetName.contains("第二排")){
-                        edInput.setHint("-999~9999" );
+                    } else if (GetName.contains("第一排")) {
+                        edInput.setHint("-999~9999");
+                    }
+                }
+                if (DP2.contains("on")) {
+                    if (GetName.contains("第二") && GetName.contains("補正")) {
+                        edInput.setHint("-99.9~99.9");
+                    } else if (GetName.contains("第二排")) {
+                        edInput.setHint("-199.9~999.9");
+                    }
+                } else {
+                    if (GetName.contains("第二") && GetName.contains("補正")) {
+                        edInput.setHint("-999~999");
+                    } else if (GetName.contains("第二排")) {
+                        edInput.setHint("-999~9999");
                     }
                 }
 
-                switch (GetName){
+                switch (GetName) {
                     case "第一排最大量程":
                         swInput.setVisibility(View.GONE);
                         swInputDP1.setVisibility(View.GONE);
@@ -494,7 +626,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-199.9~999.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -503,7 +635,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IH1+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -512,7 +644,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IH1+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog.dismiss();
-                                        }else if(toDoubleForInput>=100 && toDoubleForInput<=999.9){
+                                        } else if (toDoubleForInput >= 100 && toDoubleForInput <= 999.9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+0" + Input + ".0");
@@ -521,7 +653,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IH1+0" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -532,7 +664,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IH1-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -543,7 +675,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IH1-00" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog.dismiss();
-                                        }else if(toDoubleForInput<=-100  && toDoubleForInput>=-199.9){
+                                        } else if (toDoubleForInput <= -100 && toDoubleForInput >= -199.9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -686,7 +818,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-199.9~999.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -695,7 +827,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IH2+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogA.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -704,7 +836,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IH2+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogA.dismiss();
-                                        }else if(toDoubleForInput>=100 && toDoubleForInput<=999.9){
+                                        } else if (toDoubleForInput >= 100 && toDoubleForInput <= 999.9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+0" + Input + ".0");
@@ -713,7 +845,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IH2+0" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogA.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -724,7 +856,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IH2-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogA.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -735,7 +867,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IH2-00" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogA.dismiss();
-                                        }else if(toDoubleForInput<=-100  && toDoubleForInput>=-199.9){
+                                        } else if (toDoubleForInput <= -100 && toDoubleForInput >= -199.9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -759,7 +891,6 @@ public class DataDisplayActivity extends Activity {
                                         }
                                         break;//內容的
                                 }
-
 
 
                             }
@@ -879,7 +1010,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-199.9~999.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -888,7 +1019,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL1+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog1.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -897,7 +1028,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL1+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog1.dismiss();
-                                        }else if(toDoubleForInput>=100 && toDoubleForInput<=999.9){
+                                        } else if (toDoubleForInput >= 100 && toDoubleForInput <= 999.9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+0" + Input + ".0");
@@ -906,7 +1037,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL1+0" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog1.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -917,7 +1048,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL1-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog1.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -928,7 +1059,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL1-00" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog1.dismiss();
-                                        }else if(toDoubleForInput<=-100  && toDoubleForInput>=-199.9){
+                                        } else if (toDoubleForInput <= -100 && toDoubleForInput >= -199.9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1071,7 +1202,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-199.9~999.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -1080,7 +1211,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL2+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogC.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -1089,7 +1220,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL2+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogC.dismiss();
-                                        }else if(toDoubleForInput>=100 && toDoubleForInput<=999.9){
+                                        } else if (toDoubleForInput >= 100 && toDoubleForInput <= 999.9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+0" + Input + ".0");
@@ -1098,7 +1229,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL2+0" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogC.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1109,7 +1240,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL2-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogC.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1120,7 +1251,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL2-00" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogC.dismiss();
-                                        }else if(toDoubleForInput<=-100  && toDoubleForInput>=-199.9){
+                                        } else if (toDoubleForInput <= -100 && toDoubleForInput >= -199.9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1254,7 +1385,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-99.9~99.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -1263,7 +1394,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "PV1+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog2.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -1272,7 +1403,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "PV1+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog2.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1283,7 +1414,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "PV1-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog2.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1417,7 +1548,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-99.9~99.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -1426,7 +1557,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "PV2+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogD.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -1435,7 +1566,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "PV2+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogD.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1446,7 +1577,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "PV2-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogD.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1590,7 +1721,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-199.9~999.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -1599,7 +1730,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EH1+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog3.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -1608,7 +1739,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EH1+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog3.dismiss();
-                                        }else if(toDoubleForInput>=100 && toDoubleForInput<=999.9){
+                                        } else if (toDoubleForInput >= 100 && toDoubleForInput <= 999.9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+0" + Input + ".0");
@@ -1617,7 +1748,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EH1+0" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog3.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1628,7 +1759,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EH1-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog3.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1639,7 +1770,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EH1-00" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog3.dismiss();
-                                        }else if(toDoubleForInput<=-100  && toDoubleForInput>=-199.9){
+                                        } else if (toDoubleForInput <= -100 && toDoubleForInput >= -199.9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1663,7 +1794,6 @@ public class DataDisplayActivity extends Activity {
                                         }
                                         break;//內容的
                                 }
-
 
 
                             }
@@ -1783,7 +1913,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-199.9~999.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -1792,7 +1922,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL1+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog4.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -1801,7 +1931,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL1+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog4.dismiss();
-                                        }else if(toDoubleForInput>=100 && toDoubleForInput<=999.9){
+                                        } else if (toDoubleForInput >= 100 && toDoubleForInput <= 999.9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+0" + Input + ".0");
@@ -1810,7 +1940,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL1+0" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog4.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1821,7 +1951,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL1-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog4.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1832,7 +1962,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "IL1-00" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog4.dismiss();
-                                        }else if(toDoubleForInput<=-100  && toDoubleForInput>=-199.9){
+                                        } else if (toDoubleForInput <= -100 && toDoubleForInput >= -199.9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -1975,7 +2105,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-199.9~999.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -1984,7 +2114,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EH2+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogE.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -1993,7 +2123,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EH2+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogE.dismiss();
-                                        }else if(toDoubleForInput>=100 && toDoubleForInput<=999.9){
+                                        } else if (toDoubleForInput >= 100 && toDoubleForInput <= 999.9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+0" + Input + ".0");
@@ -2002,7 +2132,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EH2+0" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogE.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2013,7 +2143,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EH2-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogE.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2024,7 +2154,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EH2-00" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogE.dismiss();
-                                        }else if(toDoubleForInput<=-100  && toDoubleForInput>=-199.9){
+                                        } else if (toDoubleForInput <= -100 && toDoubleForInput >= -199.9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2048,7 +2178,6 @@ public class DataDisplayActivity extends Activity {
                                         }
                                         break;//內容的
                                 }
-
 
 
                             }
@@ -2168,7 +2297,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-199.9~999.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -2177,7 +2306,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EL2+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogF.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -2186,7 +2315,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EL2+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogF.dismiss();
-                                        }else if(toDoubleForInput>=100 && toDoubleForInput<=999.9){
+                                        } else if (toDoubleForInput >= 100 && toDoubleForInput <= 999.9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+0" + Input + ".0");
@@ -2195,7 +2324,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EL2+0" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogF.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2206,7 +2335,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EL2-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogF.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2217,7 +2346,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "EL2-00" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogF.dismiss();
-                                        }else if(toDoubleForInput<=-100  && toDoubleForInput>=-199.9){
+                                        } else if (toDoubleForInput <= -100 && toDoubleForInput >= -199.9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2241,7 +2370,6 @@ public class DataDisplayActivity extends Activity {
                                         }
                                         break;//內容的
                                 }
-
 
 
                             }
@@ -2361,7 +2489,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-199.9~999.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -2370,7 +2498,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "CR1+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog5.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -2379,7 +2507,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "CR1+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog5.dismiss();
-                                        }else if(toDoubleForInput>=100 && toDoubleForInput<=999.9){
+                                        } else if (toDoubleForInput >= 100 && toDoubleForInput <= 999.9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+0" + Input + ".0");
@@ -2388,7 +2516,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "CR1+0" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog5.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2399,7 +2527,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "CR1-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog5.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2410,7 +2538,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "CR1-00" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialog5.dismiss();
-                                        }else if(toDoubleForInput<=-100  && toDoubleForInput>=-199.9){
+                                        } else if (toDoubleForInput <= -100 && toDoubleForInput >= -199.9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2434,7 +2562,6 @@ public class DataDisplayActivity extends Activity {
                                         }
                                         break;//內容的
                                 }
-
 
 
                             }
@@ -2554,7 +2681,7 @@ public class DataDisplayActivity extends Activity {
 
                                         break;
                                     case "-199.9~999.9":
-                                        if (toDoubleForInput >= 0 && toDoubleForInput<9){
+                                        if (toDoubleForInput >= 0 && toDoubleForInput < 9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+000" + Input + ".0");
@@ -2563,7 +2690,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "CR1+000" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogG.dismiss();
-                                        }else if(toDoubleForInput>=10  && toDoubleForInput<=99){
+                                        } else if (toDoubleForInput >= 10 && toDoubleForInput <= 99) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+00" + Input + ".0");
@@ -2572,7 +2699,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "CR1+00" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogG.dismiss();
-                                        }else if(toDoubleForInput>=100 && toDoubleForInput<=999.9){
+                                        } else if (toDoubleForInput >= 100 && toDoubleForInput <= 999.9) {
                                             HashMap<String, String> hashMap = new HashMap<>();
                                             hashMap.put("name", nameItems[position]);
                                             hashMap.put("values", "+0" + Input + ".0");
@@ -2581,7 +2708,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "CR1+0" + Input + ".0";
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogG.dismiss();
-                                        }else if(toDoubleForInput<=0   && toDoubleForInput>=-9){
+                                        } else if (toDoubleForInput <= 0 && toDoubleForInput >= -9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2592,7 +2719,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "CR1-000" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogG.dismiss();
-                                        }else if(toDoubleForInput<=-10   && toDoubleForInput>=-99){
+                                        } else if (toDoubleForInput <= -10 && toDoubleForInput >= -99) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2603,7 +2730,7 @@ public class DataDisplayActivity extends Activity {
                                             FromDataDisplaySendValue = "CR1-00" + InputMiner;
                                             mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                             dialogG.dismiss();
-                                        }else if(toDoubleForInput<=-100  && toDoubleForInput>=-199.9){
+                                        } else if (toDoubleForInput <= -100 && toDoubleForInput >= -199.9) {
                                             toDoubleForInput = Math.abs(toDoubleForInput);
                                             String InputMiner = String.valueOf(toDoubleForInput);
                                             HashMap<String, String> hashMap = new HashMap<>();
@@ -2629,15 +2756,14 @@ public class DataDisplayActivity extends Activity {
                                 }
 
 
-
                             }
                         });
                         break;
 
                     case "警報聲":
-                        if(SPK.contains("on")){
+                        if (SPK.contains("on")) {
                             swInput.setChecked(true);
-                        }else {
+                        } else {
                             swInput.setChecked(false);
                         }
                         edInput.setVisibility(View.GONE);
@@ -2648,22 +2774,22 @@ public class DataDisplayActivity extends Activity {
                         swInput.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                             @Override
                             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                                if(isChecked){
-                                    HashMap<String,String> hashMap = new HashMap<>();
-                                    hashMap.put("name",nameItems[position]);
-                                    hashMap.put("values","on");
-                                    arrayList.set(position,hashMap);
+                                if (isChecked) {
+                                    HashMap<String, String> hashMap = new HashMap<>();
+                                    hashMap.put("name", nameItems[position]);
+                                    hashMap.put("values", "on");
+                                    arrayList.set(position, hashMap);
                                     simpleAdapter.notifyDataSetChanged();
                                     FromDataDisplaySendValue = "SPK+0001.0";
-                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
-                                }else{
-                                    HashMap<String,String> hashMap = new HashMap<>();
-                                    hashMap.put("name",nameItems[position]);
-                                    hashMap.put("values","off");
-                                    arrayList.set(position,hashMap);
+                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                } else {
+                                    HashMap<String, String> hashMap = new HashMap<>();
+                                    hashMap.put("name", nameItems[position]);
+                                    hashMap.put("values", "off");
+                                    arrayList.set(position, hashMap);
                                     simpleAdapter.notifyDataSetChanged();
                                     FromDataDisplaySendValue = "SPK+0000.0";
-                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
+                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                 }
                             }
                         });
@@ -2680,9 +2806,9 @@ public class DataDisplayActivity extends Activity {
 
                         break;
                     case "第一排小數點":
-                        if(DP1.contains("on")){
+                        if (DP1.contains("on")) {
                             swInputDP1.setChecked(true);
-                        }else{
+                        } else {
                             swInputDP1.setChecked(false);
                         }
                         edInput.setVisibility(View.GONE);
@@ -2692,22 +2818,22 @@ public class DataDisplayActivity extends Activity {
                         swInputDP1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                             @Override
                             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                                if(isChecked){
-                                    HashMap<String,String> hashMap = new HashMap<>();
-                                    hashMap.put("name",nameItems[position]);
-                                    hashMap.put("values","on");
-                                    arrayList.set(position,hashMap);
+                                if (isChecked) {
+                                    HashMap<String, String> hashMap = new HashMap<>();
+                                    hashMap.put("name", nameItems[position]);
+                                    hashMap.put("values", "on");
+                                    arrayList.set(position, hashMap);
                                     simpleAdapter.notifyDataSetChanged();
                                     FromDataDisplaySendValue = "DP1+0001.0";
-                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
-                                }else{
-                                    HashMap<String,String> hashMap = new HashMap<>();
-                                    hashMap.put("name",nameItems[position]);
-                                    hashMap.put("values","off");
-                                    arrayList.set(position,hashMap);
+                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                } else {
+                                    HashMap<String, String> hashMap = new HashMap<>();
+                                    hashMap.put("name", nameItems[position]);
+                                    hashMap.put("values", "off");
+                                    arrayList.set(position, hashMap);
                                     simpleAdapter.notifyDataSetChanged();
                                     FromDataDisplaySendValue = "DP1+0000.0";
-                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
+                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                 }
                             }
                         });
@@ -2723,9 +2849,9 @@ public class DataDisplayActivity extends Activity {
                         dialog9.show();
                         break;
                     case "第二排小數點":
-                        if(DP2.contains("on")){
+                        if (DP2.contains("on")) {
                             swInputDP2.setChecked(true);
-                        }else{
+                        } else {
                             swInputDP2.setChecked(false);
                         }
                         edInput.setVisibility(View.GONE);
@@ -2735,22 +2861,22 @@ public class DataDisplayActivity extends Activity {
                         swInputDP2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                             @Override
                             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                                if(isChecked){
-                                    HashMap<String,String> hashMap = new HashMap<>();
-                                    hashMap.put("name",nameItems[position]);
-                                    hashMap.put("values","on");
-                                    arrayList.set(position,hashMap);
+                                if (isChecked) {
+                                    HashMap<String, String> hashMap = new HashMap<>();
+                                    hashMap.put("name", nameItems[position]);
+                                    hashMap.put("values", "on");
+                                    arrayList.set(position, hashMap);
                                     simpleAdapter.notifyDataSetChanged();
                                     FromDataDisplaySendValue = "DP2+0001.0";
-                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
-                                }else{
-                                    HashMap<String,String> hashMap = new HashMap<>();
-                                    hashMap.put("name",nameItems[position]);
-                                    hashMap.put("values","off");
-                                    arrayList.set(position,hashMap);
+                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                } else {
+                                    HashMap<String, String> hashMap = new HashMap<>();
+                                    hashMap.put("name", nameItems[position]);
+                                    hashMap.put("values", "off");
+                                    arrayList.set(position, hashMap);
                                     simpleAdapter.notifyDataSetChanged();
                                     FromDataDisplaySendValue = "DP2+0000.0";
-                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
+                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                 }
                             }
                         });
@@ -2774,61 +2900,63 @@ public class DataDisplayActivity extends Activity {
     }
 
 
-    private void Device_BT_2_TH(){
+    private void Device_BT_2_TH() {
         Intent intent = this.getIntent();
-        Name1   = intent.getStringExtra("PV1");
-        Name1   = "溫度補正";
-        PV1     = intent.getStringExtra("PV1_Value");
+        Name1 = intent.getStringExtra("PV1");
+        Name1 = "溫度補正";
+        PV1 = intent.getStringExtra("PV1_Value");
 
-        Name2   = intent.getStringExtra("PV2");
-        Name2   = "濕度補正";
-        PV2     = intent.getStringExtra("PV2_Value");
+        Name2 = intent.getStringExtra("PV2");
+        Name2 = "濕度補正";
+        PV2 = intent.getStringExtra("PV2_Value");
 
-        Name3   = intent.getStringExtra("EH1");
-        Name3   = "溫度上限警報";
-        EH1     = intent.getStringExtra("EH1_Value");
+        Name3 = intent.getStringExtra("EH1");
+        Name3 = "溫度上限警報";
+        EH1 = intent.getStringExtra("EH1_Value");
 
-        Name4   = intent.getStringExtra("EH2");
-        Name4   = "溫度下限警報";
-        EH2     = intent.getStringExtra("EH2_Value");
+        Name4 = intent.getStringExtra("EL1");
+        Name4 = "溫度下限警報";
+        EH2 = intent.getStringExtra("EL1_Value");
 
-        Name5   = intent.getStringExtra("EL1");
-        Name5   = "濕度上限警報";
-        EL1     = intent.getStringExtra("EL1_Value");
+        Name5 = intent.getStringExtra("EH2");
+        Name5 = "濕度上限警報";
+        EL1 = intent.getStringExtra("EH2_Value");
 
-        Name6   = intent.getStringExtra("EL2");
-        Name6   = "濕度下限警報";
-        EL2     = intent.getStringExtra("EL2_Value");
+        Name6 = intent.getStringExtra("EL2");
+        Name6 = "濕度下限警報";
+        EL2 = intent.getStringExtra("EL2_Value");
 
-        Name7   = intent.getStringExtra("CR1");
-        Name7   = "溫度顏色轉換";
-        CR1     = intent.getStringExtra("CR1_Value");
+        Name7 = intent.getStringExtra("CR1");
+        Name7 = "溫度顏色轉換";
+        CR1 = intent.getStringExtra("CR1_Value");
 
-        Name8   = intent.getStringExtra("CR2");
-        Name8   = "濕度顏色轉換";
-        CR2     = intent.getStringExtra("CR2_Value");
+        Name8 = intent.getStringExtra("CR2");
+        Name8 = "濕度顏色轉換";
+        CR2 = intent.getStringExtra("CR2_Value");
 
-        Name9   = intent.getStringExtra("SPK");
-        Name9   = "警報聲";
-        SPK     = intent.getStringExtra("SPK_Value");
+        Name9 = intent.getStringExtra("SPK");
+        Name9 = "警報聲";
+        SPK = intent.getStringExtra("SPK_Value");
 
-        final String[] nameItems={"裝置名稱",Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9};
-        final String[] valuesItems = {DeviceName,PV1,PV2,EH1,EH2,EL1,EL2,CR1,CR2,SPK};
+        final String[] nameItems = {"裝置名稱", Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9};
+        final String[] valuesItems = {DeviceName, PV1, PV2, EH1, EL1, EH2, EL2, CR1, CR2, SPK};
 
         SimpleListView = findViewById(R.id.listView);
 
         final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
-        for(int i = 0;i<nameItems.length; i++){
-            HashMap<String,String> hashMap = new HashMap<>();
-            hashMap.put("name",nameItems[i]);
-            hashMap.put("values",valuesItems[i]);
+        for (int i = 0; i < nameItems.length; i++) {
+            HashMap<String, String> hashMap = new HashMap<>();
+            hashMap.put("name", nameItems[i]);
+            hashMap.put("values", valuesItems[i]);
             arrayList.add(hashMap);
         }
-        String[] from = {"name","values"};
-        int[] to = {R.id.TitleName,R.id.ResultValue};
+        String[] from = {"name", "values"};
+
+        int[] to = {R.id.TitleName, R.id.ResultValue};
         simpleAdapter =
-                new SimpleAdapter(this,arrayList,R.layout.style_listview,from,to);
+                new SimpleAdapter(this, arrayList, R.layout.style_listview, from, to);
         SimpleListView.setAdapter(simpleAdapter);
+
 
         SimpleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -2869,29 +2997,31 @@ public class DataDisplayActivity extends Activity {
                             public void onClick(View v) {
                                 String Input = edInput.getText().toString().trim();
                                 double toDouble = Double.parseDouble(Input);
-                                if (toDouble>5){
+                                if (toDouble > 5) {
                                     edInput.setText("5");
-                                }else if (toDouble<-5){
+                                } else if (toDouble < -5) {
                                     edInput.setText("-5");
-                                }else{
-                                    if(toDouble >= 0){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+000" + Input + ".0");
-                                        arrayList.set(position,hashMap);
+                                } else {
+                                    if (toDouble >= 0) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+000" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
                                         FromDataDisplaySendValue = "PV1+000" + Input + ".0";
+                                        PV1 = "+000"+Input+".0";
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog.dismiss();
-                                    }else{
+                                    } else {
                                         toDouble = Math.abs(toDouble);
                                         String InputMiner = String.valueOf(toDouble);
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","-000" + InputMiner);
-                                        arrayList.set(position,hashMap);
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "-000" + InputMiner);
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "PV1-000" + InputMiner ;
+                                        FromDataDisplaySendValue = "PV1-000" + InputMiner;
+                                        PV1 = "-000"+InputMiner;
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog.dismiss();
                                     }
@@ -2928,29 +3058,31 @@ public class DataDisplayActivity extends Activity {
                             public void onClick(View v) {
                                 String Input = edInput.getText().toString().trim();
                                 double toDouble = Double.parseDouble(Input);
-                                if (toDouble>5){
+                                if (toDouble > 5) {
                                     edInput.setText("5");
-                                }else if (toDouble<-5){
+                                } else if (toDouble < -5) {
                                     edInput.setText("-5");
-                                }else{
-                                    if(toDouble >= 0){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+000" + Input + ".0");
-                                        arrayList.set(position,hashMap);
+                                } else {
+                                    if (toDouble >= 0) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+000" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
                                         FromDataDisplaySendValue = "PV2+000" + Input + ".0";
+                                        PV2 = "+000"+ Input + ".0";
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog1.dismiss();
-                                    }else{
+                                    } else {
                                         toDouble = Math.abs(toDouble);
                                         String InputMiner = String.valueOf(toDouble);
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","-000" + InputMiner);
-                                        arrayList.set(position,hashMap);
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "-000" + InputMiner);
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "PV2-000" + InputMiner ;
+                                        FromDataDisplaySendValue = "PV2-000" + InputMiner;
+                                        PV2 = "-000"+ InputMiner;
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog1.dismiss();
                                     }
@@ -2987,50 +3119,54 @@ public class DataDisplayActivity extends Activity {
                             public void onClick(View v) {
                                 String Input = edInput.getText().toString().trim();
                                 double toDouble = Double.parseDouble(Input);
-                                if (toDouble>65){
+                                if (toDouble > 65) {
                                     edInput.setText("65");
-                                }else if (toDouble<-10){
+                                } else if (toDouble < -10) {
                                     edInput.setText("-10");
-                                }else{
-                                    if(toDouble >= 0 && toDouble <=9){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+000" + Input + ".0");
-                                        arrayList.set(position,hashMap);
+                                } else {
+                                    if (toDouble >= 0 && toDouble <= 9) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+000" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
                                         FromDataDisplaySendValue = "EH1+000" + Input + ".0";
+                                        EH1 = "+000" + Input + ".0";
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog2.dismiss();
-                                    }else if(toDouble >9){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+00" + Input + ".0");
-                                        arrayList.set(position,hashMap);
+                                    } else if (toDouble > 9) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+00" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
                                         FromDataDisplaySendValue = "EH1+00" + Input + ".0";
+                                        EH1 = "+00" + Input + ".0";
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog2.dismiss();
-                                    }else if(toDouble == -10){
+                                    } else if (toDouble == -10) {
                                         toDouble = Math.abs(toDouble);
                                         String InputMiner = String.valueOf(toDouble);
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","-00" + InputMiner);
-                                        arrayList.set(position,hashMap);
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "-00" + InputMiner);
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "EH1-00" + InputMiner ;
+                                        FromDataDisplaySendValue = "EH1-00" + InputMiner;
+                                        EH1 = "-00" + InputMiner ;
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog2.dismiss();
-                                    }
-                                    else{
+                                    } else {
                                         toDouble = Math.abs(toDouble);
                                         String InputMiner = String.valueOf(toDouble);
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","-000" + InputMiner);
-                                        arrayList.set(position,hashMap);
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "-000" + InputMiner);
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "EH1-000" + InputMiner ;
+                                        FromDataDisplaySendValue = "EH1-000" + InputMiner;
+                                        EH1 = FromDataDisplaySendValue;
+                                        EH1 = "-000" + InputMiner ;
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog2.dismiss();
                                     }
@@ -3067,55 +3203,57 @@ public class DataDisplayActivity extends Activity {
                             public void onClick(View v) {
                                 String Input = edInput.getText().toString().trim();
                                 double toDouble = Double.parseDouble(Input);
-                                if (toDouble>65){
+                                if (toDouble > 65) {
                                     edInput.setText("65");
-                                }else if (toDouble<-10){
+                                } else if (toDouble < -10) {
                                     edInput.setText("-10");
-                                }else{
-                                    if(toDouble >= 0 && toDouble <=9){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+000" + Input + ".0");
-                                        arrayList.set(position,hashMap);
+                                } else {
+                                    if (toDouble >= 0 && toDouble <= 9) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+000" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
                                         FromDataDisplaySendValue = "EL1+000" + Input + ".0";
+                                        EL1 = "+000" + Input + ".0";
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog3.dismiss();
-                                    }else if(toDouble >9){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+00" + Input + ".0");
-                                        arrayList.set(position,hashMap);
+                                    } else if (toDouble > 9) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+00" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
                                         FromDataDisplaySendValue = "EL1+00" + Input + ".0";
+                                        EL1 = "+00" + Input + ".0";
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog3.dismiss();
-                                    }else if(toDouble == -10){
+                                    } else if (toDouble == -10) {
                                         toDouble = Math.abs(toDouble);
                                         String InputMiner = String.valueOf(toDouble);
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","-00" + InputMiner);
-                                        arrayList.set(position,hashMap);
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "-00" + InputMiner);
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "EL1-00" + InputMiner ;
+                                        FromDataDisplaySendValue = "EL1-00" + InputMiner;
+                                        EL1 = "-00" + InputMiner;
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog3.dismiss();
-                                    }
-                                    else{
+                                    } else {
                                         toDouble = Math.abs(toDouble);
                                         String InputMiner = String.valueOf(toDouble);
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","-000" + InputMiner);
-                                        arrayList.set(position,hashMap);
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "-000" + InputMiner);
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "EL1-000" + InputMiner ;
+                                        FromDataDisplaySendValue = "EL1-000" + InputMiner;
+                                        EL1 = "-000" + InputMiner;
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog3.dismiss();
                                     }
                                 }
-
 
 
                             }
@@ -3148,37 +3286,40 @@ public class DataDisplayActivity extends Activity {
                             public void onClick(View v) {
                                 String Input = edInput.getText().toString().trim();
                                 double toDouble = Double.parseDouble(Input);
-                                if (toDouble<0){
+                                if (toDouble < 0) {
                                     edInput.setText("0");
-                                }else if(toDouble>100){
+                                } else if (toDouble > 100) {
                                     edInput.setText("100");
-                                }else{
-                                    if(toDouble <=9){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+000" + Input + ".0");
-                                        arrayList.set(position,hashMap);
+                                } else {
+                                    if (toDouble <= 9) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+000" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
                                         FromDataDisplaySendValue = "EH2+000" + Input + ".0";
+                                        EH2 = "+000" + Input + ".0";
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog4.dismiss();
-                                    }else if(toDouble>10&&toDouble<=99){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+00"+Input+".0");
-                                        arrayList.set(position,hashMap);
+                                    } else if (toDouble > 10 && toDouble <= 99) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+00" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "EH2+00"+Input+".0";
-                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
+                                        FromDataDisplaySendValue = "EH2+00" + Input + ".0";
+                                        EH2 = "+00" + Input + ".0";
+                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog4.dismiss();
-                                    }else{
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+0"+Input+".0");
-                                        arrayList.set(position,hashMap);
+                                    } else {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+0" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "EH2+0"+Input+".0";
-                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
+                                        FromDataDisplaySendValue = "EH2+0" + Input + ".0";
+                                        EH2 = "+0" + Input + ".0";
+                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog4.dismiss();
                                     }
                                 }
@@ -3214,37 +3355,40 @@ public class DataDisplayActivity extends Activity {
                             public void onClick(View v) {
                                 String Input = edInput.getText().toString().trim();
                                 double toDouble = Double.parseDouble(Input);
-                                if (toDouble<0){
+                                if (toDouble < 0) {
                                     edInput.setText("0");
-                                }else if(toDouble>100){
+                                } else if (toDouble > 100) {
                                     edInput.setText("100");
-                                }else{
-                                    if(toDouble <=9){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+000" + Input + ".0");
-                                        arrayList.set(position,hashMap);
+                                } else {
+                                    if (toDouble <= 9) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+000" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
                                         FromDataDisplaySendValue = "EL2+000" + Input + ".0";
+                                        EL2 = "+000" + Input + ".0";
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog5.dismiss();
-                                    }else if(toDouble>10&&toDouble<=99){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+00"+Input+".0");
-                                        arrayList.set(position,hashMap);
+                                    } else if (toDouble > 10 && toDouble <= 99) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+00" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "EL2+00"+Input+".0";
-                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
+                                        FromDataDisplaySendValue = "EL2+00" + Input + ".0";
+                                        EL2 = "+00" + Input + ".0";
+                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog5.dismiss();
-                                    }else{
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+0"+Input+".0");
-                                        arrayList.set(position,hashMap);
+                                    } else {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+0" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "EL2+0"+Input+".0";
-                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
+                                        FromDataDisplaySendValue = "EL2+0" + Input + ".0";
+                                        EL2 = "+0" + Input + ".0";
+                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog5.dismiss();
                                     }
                                 }
@@ -3279,50 +3423,53 @@ public class DataDisplayActivity extends Activity {
                             public void onClick(View v) {
                                 String Input = edInput.getText().toString().trim();
                                 double toDouble = Double.parseDouble(Input);
-                                if (toDouble>65){
+                                if (toDouble > 65) {
                                     edInput.setText("65");
-                                }else if (toDouble<-10){
+                                } else if (toDouble < -10) {
                                     edInput.setText("-10");
-                                }else{
-                                    if(toDouble >= 0 && toDouble <=9){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+000" + Input + ".0");
-                                        arrayList.set(position,hashMap);
+                                } else {
+                                    if (toDouble >= 0 && toDouble <= 9) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+000" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
                                         FromDataDisplaySendValue = "CR1+000" + Input + ".0";
+                                        CR1 = "+000" + Input + ".0";
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog6.dismiss();
-                                    }else if(toDouble >9){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+00" + Input + ".0");
-                                        arrayList.set(position,hashMap);
+                                    } else if (toDouble > 9) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+00" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
                                         FromDataDisplaySendValue = "CR1+00" + Input + ".0";
+                                        CR1 = "+00" + Input + ".0";
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog6.dismiss();
-                                    }else if(toDouble == -10){
+                                    } else if (toDouble == -10) {
                                         toDouble = Math.abs(toDouble);
                                         String InputMiner = String.valueOf(toDouble);
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","-00" + InputMiner);
-                                        arrayList.set(position,hashMap);
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "-00" + InputMiner);
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "CR1-00" + InputMiner ;
+                                        FromDataDisplaySendValue = "CR1-00" + InputMiner;
+                                        CR1 = "-00" + InputMiner;
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog6.dismiss();
-                                    }
-                                    else{
+                                    } else {
                                         toDouble = Math.abs(toDouble);
                                         String InputMiner = String.valueOf(toDouble);
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","-000" + InputMiner);
-                                        arrayList.set(position,hashMap);
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "-000" + InputMiner);
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "CR1-000" + InputMiner ;
+                                        FromDataDisplaySendValue = "CR1-000" + InputMiner;
+                                        CR1 = "-000" + InputMiner;
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog6.dismiss();
                                     }
@@ -3359,37 +3506,40 @@ public class DataDisplayActivity extends Activity {
                             public void onClick(View v) {
                                 String Input = edInput.getText().toString().trim();
                                 double toDouble = Double.parseDouble(Input);
-                                if (toDouble<0){
+                                if (toDouble < 0) {
                                     edInput.setText("0");
-                                }else if(toDouble>100){
+                                } else if (toDouble > 100) {
                                     edInput.setText("100");
-                                }else{
-                                    if(toDouble <=9){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+000" + Input + ".0");
-                                        arrayList.set(position,hashMap);
+                                } else {
+                                    if (toDouble <= 9) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+000" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
                                         FromDataDisplaySendValue = "CR2+000" + Input + ".0";
+                                        CR2 = "+000" + Input + ".0";
                                         mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog7.dismiss();
-                                    }else if(toDouble>10&&toDouble<=99){
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+00"+Input+".0");
-                                        arrayList.set(position,hashMap);
+                                    } else if (toDouble > 10 && toDouble <= 99) {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+00" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "CR2+00"+Input+".0";
-                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
+                                        FromDataDisplaySendValue = "CR2+00" + Input + ".0";
+                                        CR2 = "+00" + Input + ".0";
+                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog7.dismiss();
-                                    }else{
-                                        HashMap<String,String> hashMap = new HashMap<>();
-                                        hashMap.put("name",nameItems[position]);
-                                        hashMap.put("values","+0"+Input+".0");
-                                        arrayList.set(position,hashMap);
+                                    } else {
+                                        HashMap<String, String> hashMap = new HashMap<>();
+                                        hashMap.put("name", nameItems[position]);
+                                        hashMap.put("values", "+0" + Input + ".0");
+                                        arrayList.set(position, hashMap);
                                         simpleAdapter.notifyDataSetChanged();
-                                        FromDataDisplaySendValue = "CR2+0"+Input+".0";
-                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
+                                        FromDataDisplaySendValue = "CR2+0" + Input + ".0";
+                                        CR2 = "+0" + Input + ".0";
+                                        mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                         dialog7.dismiss();
                                     }
                                 }
@@ -3399,9 +3549,9 @@ public class DataDisplayActivity extends Activity {
 
                         break;
                     case "警報聲":
-                        if(SPK.contains("on")){
+                        if (SPK.contains("on")) {
                             swInput.setChecked(true);
-                        }else {
+                        } else {
                             swInput.setChecked(false);
                         }
                         edInput.setVisibility(View.GONE);
@@ -3412,22 +3562,24 @@ public class DataDisplayActivity extends Activity {
                         swInput.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                             @Override
                             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                                if(isChecked){
-                                    HashMap<String,String> hashMap = new HashMap<>();
-                                    hashMap.put("name",nameItems[position]);
-                                    hashMap.put("values","on");
-                                    arrayList.set(position,hashMap);
+                                if (isChecked) {
+                                    HashMap<String, String> hashMap = new HashMap<>();
+                                    hashMap.put("name", nameItems[position]);
+                                    hashMap.put("values", "on");
+                                    arrayList.set(position, hashMap);
                                     simpleAdapter.notifyDataSetChanged();
                                     FromDataDisplaySendValue = "SPK+0001.0";
-                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
-                                }else{
-                                    HashMap<String,String> hashMap = new HashMap<>();
-                                    hashMap.put("name",nameItems[position]);
-                                    hashMap.put("values","off");
-                                    arrayList.set(position,hashMap);
+                                    SPK = "on";
+                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
+                                } else {
+                                    HashMap<String, String> hashMap = new HashMap<>();
+                                    hashMap.put("name", nameItems[position]);
+                                    hashMap.put("values", "off");
+                                    arrayList.set(position, hashMap);
                                     simpleAdapter.notifyDataSetChanged();
                                     FromDataDisplaySendValue = "SPK+0000.0";
-                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData,true);
+                                    SPK = "off";
+                                    mBluetoothLeService.setCharacteristicNotification(DeviceControlActivity.theData, true);
                                 }
                             }
                         });
@@ -3523,17 +3675,17 @@ public class DataDisplayActivity extends Activity {
 
     private void displayData(String data) {
         Log.v("BT", "DD 回傳" + data);
-        if (data.contains("SPK+0001.0")){
+        if (data.contains("SPK+0001.0")) {
             SPK = "on";
-            }else if(data.contains("SPK+0000.0")){
+        } else if (data.contains("SPK+0000.0")) {
             SPK = "off";
-        }else if(data.contains("DP1+0001.0")){
+        } else if (data.contains("DP1+0001.0")) {
             DP1 = "on";
-        }else if(data.contains("DP1+0000.0")){
+        } else if (data.contains("DP1+0000.0")) {
             DP1 = "off";
-        }else if(data.contains("DP2+0001.0")){
+        } else if (data.contains("DP2+0001.0")) {
             DP2 = "on";
-        }else if(data.contains("DP2+0000.0")){
+        } else if (data.contains("DP2+0000.0")) {
             DP2 = "off";
         }
     }
@@ -3564,7 +3716,6 @@ public class DataDisplayActivity extends Activity {
         intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);//從服務中接受(收?)數據
         return intentFilter;
     }
-
 
 
 }
